@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAction, useQuery } from "convex/react";
-import { X, Send, Loader2, Bot, User, Sparkles } from "lucide-react";
+import { X, Send, Loader2, User, Sparkles } from "lucide-react";
+import { LogoMark } from "@/components/logo";
 import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -121,8 +122,8 @@ function ChatThread({
       <div className="relative flex h-full w-full flex-col border-line-strong bg-surface shadow-2xl sm:h-[640px] sm:max-w-md sm:rounded-2xl sm:border [animation:var(--animate-slide-up)]">
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/15">
-              <Bot className="h-5 w-5 text-brand-500" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/10 ring-1 ring-brand-500/25">
+              <LogoMark className="h-5 w-5" id="chat-hdr" />
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-fg">Job Coach</p>
@@ -173,19 +174,21 @@ function ChatThread({
             >
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                  msg.role === "user" ? "bg-white" : "bg-raised"
+                  msg.role === "user"
+                    ? "bg-fg"
+                    : "bg-brand-500/10 ring-1 ring-brand-500/20"
                 }`}
               >
                 {msg.role === "user" ? (
                   <User className="h-4 w-4 text-canvas" />
                 ) : (
-                  <Bot className="h-4 w-4 text-brand-500" />
+                  <LogoMark className="h-4 w-4" id="chat-msg" />
                 )}
               </div>
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   msg.role === "user"
-                    ? "bg-white text-canvas"
+                    ? "bg-fg text-canvas"
                     : "bg-raised text-fg"
                 }`}
               >
