@@ -109,8 +109,13 @@ export function NotificationsBell({ direction = "down" }: { direction?: "up" | "
       {open && (
         <div
           className={cn(
-            "absolute right-0 z-50 w-80 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl [animation:var(--animate-fade-in)]",
-            direction === "up" ? "bottom-11" : "top-11"
+            "z-[60] w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-line bg-surface shadow-2xl [animation:var(--animate-fade-in)]",
+            // "up" = sidebar footer: the bell sits at the bottom-left of the
+            // viewport, so anchoring to the bell pushes the panel off-screen.
+            // Pin it to the viewport corner instead, floating over content.
+            direction === "up"
+              ? "fixed bottom-20 left-4"
+              : "absolute right-0 top-11"
           )}
         >
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
