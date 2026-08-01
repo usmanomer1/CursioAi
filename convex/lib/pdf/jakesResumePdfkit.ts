@@ -5,6 +5,14 @@ import type PDFKit from "pdfkit";
 import type { StructuredResume } from "../ai/resumeOptimizer";
 
 const MARGIN = 36;
+const HIGHLIGHT = "#d3f2dd"; // soft green behind added/rewritten content
+
+export interface RenderOptions {
+  /** Returns true when a content block is new/rewritten and should be
+   * highlighted. Background rects only — text metrics are untouched, so
+   * pagination matches the clean render exactly. */
+  isNew?: (text: string) => boolean;
+}
 const BODY = 10;
 const SMALL = 9;
 const SECTION = 11;
@@ -103,13 +111,25 @@ function drawSplitRow(
   doc.y = y + lh + LINE_GAP;
 }
 
-function drawBullets(doc: PDFKit.PDFDocument, bullets: string[]) {
+function drawBullets(
+  doc: PDFKit.PDFDocument,
+  bullets: string[],
+  isNew?: (text: string) => boolean
+) {
   const width = contentWidth(doc) - 10;
   doc.font("Helvetica").fontSize(SMALL + 0.5);
   for (const bullet of bullets) {
     const h = doc.heightOfString(bullet, { width: width - 8 });
     if (!ensureSpace(doc, h + 2)) break;
     const y = doc.y;
+    if (isNew?.(bullet)) {
+      doc
+        .save()
+        .rect(MARGIN, y - 1, contentWidth(doc), h + 2)
+        .fill(HIGHLIGHT)
+        .restore();
+      doc.fillColor("#111");
+    }
     doc.text("•", MARGIN + 2, y, { lineBreak: false });
     doc.text(bullet, MARGIN + 12, y, { width: width - 12 });
     doc.y = Math.max(doc.y, y + h) + 1;
@@ -244,8 +264,10 @@ function collectPdfBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
 }
 
 export async function renderJakesResumePdf(
-  resume: StructuredResume
+  resume: StructuredResume,
+  opts: RenderOptions = {}
 ): Promise<Uint8Array> {
+  const { isNew } = opts;
   const doc = new PDFDocument({
     size: "LETTER",
     margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
@@ -265,7 +287,17 @@ export async function renderJakesResumePdf(
 
   if (resume.summary) {
     drawSectionTitle(doc, "Summary");
-    doc.font("Helvetica").fontSize(BODY).text(resume.summary, {
+    doc.font("Helvetica").fontSize(BODY);
+    if (isNew?.(resume.summary)) {
+      const h = doc.heightOfString(resume.summary, { width: contentWidth(doc) });
+      doc
+        .save()
+        .rect(MARGIN, doc.y - 1, contentWidth(doc), h + 2)
+        .fill(HIGHLIGHT)
+        .restore();
+      doc.fillColor("#111");
+    }
+    doc.text(resume.summary, MARGIN, doc.y, {
       width: contentWidth(doc),
       align: "left",
     });
@@ -279,7 +311,7 @@ export async function renderJakesResumePdf(
         ed.graduationDate ?? formatDates(ed.startDate, ed.endDate);
       drawSplitRow(doc, ed.institution, dates, { bold: true });
       drawSplitRow(doc, ed.degree, ed.location ?? "", { italic: true, size: SMALL });
-      if (ed.details?.length) drawBullets(doc, ed.details);
+      if (ed.details?.length) drawBullets(doc, ed.details, isNew);
       doc.moveDown(0.15);
     }
   }
@@ -294,7 +326,7 @@ export async function renderJakesResumePdf(
         italic: true,
         size: SMALL,
       });
-      drawBullets(doc, exp.bullets);
+      drawBullets(doc, exp.bullets, isNew);
       doc.moveDown(0.15);
     }
   }
@@ -303,7 +335,7 @@ export async function renderJakesResumePdf(
     drawSectionTitle(doc, "Projects");
     for (const proj of resume.projects) {
       drawProjectHeading(doc, proj);
-      drawBullets(doc, proj.bullets);
+      drawBullets(doc, proj.bullets, isNew);
       doc.moveDown(0.15);
     }
   }
@@ -313,6 +345,18 @@ export async function renderJakesResumePdf(
     for (const cat of resume.skills.categories) {
       if (!ensureSpace(doc, 12)) break;
       const y = doc.y;
+      if (isNew?.(`${cat.category} ${cat.items}`)) {
+        doc.font("Helvetica").fontSize(SMALL + 0.5);
+        const h = doc.heightOfString(`${cat.category}: ${cat.items}`, {
+          width: contentWidth(doc),
+        });
+        doc
+          .save()
+          .rect(MARGIN, y - 1, contentWidth(doc), h + 2)
+          .fill(HIGHLIGHT)
+          .restore();
+        doc.fillColor("#111");
+      }
       doc.font("Helvetica-Bold").fontSize(SMALL + 0.5).text(`${cat.category}: `, MARGIN, y, {
         continued: true,
         lineBreak: false,

@@ -15,7 +15,7 @@ import {
   normalizeStructuredResume,
   type StructuredResume,
 } from "./lib/ai/resumeOptimizer";
-import { generateResumePdf } from "./lib/pdf/resumePdf";
+import { generateResumePdfBundle } from "./lib/pdf/resumePdf";
 import type { ResumeLinks } from "./lib/pdf/resumeLinks";
 
 /**
@@ -119,13 +119,21 @@ export const runTailorGeneration = internalAction({
       );
       const optimizedText = structuredResumeToPlainText(normalized);
 
-      const pdfBytes = await generateResumePdf(
+      const bundle = await generateResumePdfBundle(
         normalized,
-        resume.resumeLinks as ResumeLinks | undefined
+        resume.resumeLinks as ResumeLinks | undefined,
+        resume.resumeText
       );
       const storageId = await ctx.storage.store(
-        new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" })
+        new Blob([new Uint8Array(bundle.pdf)], { type: "application/pdf" })
       );
+      const diffStorageId = bundle.highlighted
+        ? await ctx.storage.store(
+            new Blob([new Uint8Array(bundle.highlighted)], {
+              type: "application/pdf",
+            })
+          )
+        : undefined;
 
       const safeCompany = job.companyName
         .replace(/[^A-Za-z0-9]+/g, "_")
@@ -161,6 +169,7 @@ export const runTailorGeneration = internalAction({
         scoreBefore: normalized.optimization_summary.ats_score_before,
         scoreAfter: normalized.optimization_summary.ats_score_after,
         storageId,
+        diffStorageId,
         fileName,
       });
 

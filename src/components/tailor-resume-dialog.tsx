@@ -23,7 +23,6 @@ import type { Id } from "@convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { diffWords, type DiffSpan } from "@/lib/diff";
 
 interface Requirement {
   keyword: string;
@@ -429,13 +428,13 @@ function SelectStep({
 }
 
 interface DoneTailorJob {
-  originalText?: string;
   optimizedText?: string;
   changesSummary?: string[];
   keywordsAdded?: string[];
   scoreBefore?: number;
   scoreAfter?: number;
   pdfUrl: string | null;
+  diffPdfUrl?: string | null;
   fileName?: string;
 }
 
@@ -450,16 +449,18 @@ function ResultView({
   onAdjust: () => void;
   onRestart: () => void;
 }) {
+  const hasDiffPdf = Boolean(tailorJob.diffPdfUrl);
+  // Lead with the highlighted variant so additions are visible immediately.
+  const [showAdditions, setShowAdditions] = useState(hasDiffPdf);
   const [tab, setTab] = useState<"pdf" | "changes">("pdf");
 
-  const spans: DiffSpan[] = diffWords(
-    tailorJob.originalText ?? "",
-    tailorJob.optimizedText ?? ""
-  );
-  const added = spans.filter((s) => s.op === "added").length;
   const before = tailorJob.scoreBefore ?? 0;
   const after = tailorJob.scoreAfter ?? 0;
   const delta = after - before;
+  const src =
+    showAdditions && tailorJob.diffPdfUrl
+      ? tailorJob.diffPdfUrl
+      : tailorJob.pdfUrl;
 
   return (
     <>
@@ -472,17 +473,35 @@ function ResultView({
           {delta > 0 && <Badge variant="success">+{delta}</Badge>}
         </span>
 
+        {tab === "pdf" && hasDiffPdf && (
+          <button
+            onClick={() => setShowAdditions((v) => !v)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+              showAdditions
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "border-line text-subtle hover:text-fg"
+            )}
+          >
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                showAdditions ? "bg-emerald-500" : "bg-line-strong"
+              )}
+            />
+            Highlight additions
+          </button>
+        )}
+
         <div className="ml-auto flex rounded-lg border border-line p-0.5">
           <button
             onClick={() => setTab("pdf")}
             className={cn(
               "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-              tab === "pdf"
-                ? "bg-raised text-fg"
-                : "text-subtle hover:text-fg"
+              tab === "pdf" ? "bg-raised text-fg" : "text-subtle hover:text-fg"
             )}
           >
-            Resume preview
+            Resume
           </button>
           <button
             onClick={() => setTab("changes")}
@@ -493,16 +512,16 @@ function ResultView({
                 : "text-subtle hover:text-fg"
             )}
           >
-            Changes{added > 0 ? ` (${added})` : ""}
+            What changed
           </button>
         </div>
       </div>
 
       {tab === "pdf" ? (
         <div className="min-h-0 flex-1 bg-raised/40">
-          {tailorJob.pdfUrl ? (
+          {src ? (
             <iframe
-              src={`${tailorJob.pdfUrl}#toolbar=0&navpanes=0&view=FitH`}
+              src={`${src}#toolbar=0&navpanes=0&view=FitH`}
               title="Tailored resume preview"
               className="h-full w-full border-0"
             />
@@ -515,7 +534,7 @@ function ResultView({
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {(tailorJob.keywordsAdded?.length ?? 0) > 0 && (
-            <div className="mb-4">
+            <div className="mb-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
                 Keywords added
               </p>
@@ -530,14 +549,14 @@ function ResultView({
           )}
 
           {(tailorJob.changesSummary?.length ?? 0) > 0 && (
-            <div className="mb-4">
+            <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
                 What changed
               </p>
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {tailorJob.changesSummary!.map((c, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-muted">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-500" />
+                  <li key={i} className="flex gap-2.5 text-sm text-muted">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                     {c}
                   </li>
                 ))}
@@ -545,39 +564,12 @@ function ResultView({
             </div>
           )}
 
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
-            Marked-up text —{" "}
-            <span className="normal-case">
-              <span className="rounded bg-emerald-500/15 px-1 text-emerald-700 dark:text-emerald-300">
-                added
-              </span>{" "}
-              ·{" "}
-              <span className="rounded bg-red-500/10 px-1 text-red-600/80 line-through dark:text-red-300/70">
-                removed
-              </span>
-            </span>
-          </p>
-          <div className="rounded-xl border border-line px-4 py-3 text-[13px] leading-relaxed text-muted">
-            {spans.map((sp, i) =>
-              sp.op === "same" ? (
-                <span key={i}>{sp.text} </span>
-              ) : sp.op === "added" ? (
-                <span
-                  key={i}
-                  className="rounded bg-emerald-500/15 px-0.5 text-emerald-700 dark:text-emerald-300"
-                >
-                  {sp.text}{" "}
-                </span>
-              ) : (
-                <span
-                  key={i}
-                  className="rounded bg-red-500/10 px-0.5 text-red-600/70 line-through decoration-red-500/50 dark:text-red-300/60"
-                >
-                  {sp.text}{" "}
-                </span>
-              )
-            )}
-          </div>
+          {hasDiffPdf && (
+            <p className="mt-5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-3.5 py-2.5 text-xs text-muted">
+              Tip: on the Resume tab, “Highlight additions” marks the
+              new and rewritten lines in green directly on the PDF.
+            </p>
+          )}
         </div>
       )}
 

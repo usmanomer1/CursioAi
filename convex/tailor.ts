@@ -158,6 +158,9 @@ export const getForJob = query({
     return {
       ...job,
       pdfUrl: job.storageId ? await ctx.storage.getUrl(job.storageId) : null,
+      diffPdfUrl: job.diffStorageId
+        ? await ctx.storage.getUrl(job.diffStorageId)
+        : null,
     };
   },
 });
@@ -231,6 +234,7 @@ export const finishGeneration = internalMutation({
     scoreBefore: v.number(),
     scoreAfter: v.number(),
     storageId: v.id("_storage"),
+    diffStorageId: v.optional(v.id("_storage")),
     fileName: v.string(),
   },
   returns: v.null(),

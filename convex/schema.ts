@@ -258,6 +258,8 @@ export default defineSchema({
     scoreBefore: v.optional(v.number()),
     scoreAfter: v.optional(v.number()),
     storageId: v.optional(v.id("_storage")),
+    // Same PDF with added/rewritten blocks highlighted green.
+    diffStorageId: v.optional(v.id("_storage")),
     fileName: v.optional(v.string()),
     errorMessage: v.optional(v.string()),
     createdAt: v.number(),
