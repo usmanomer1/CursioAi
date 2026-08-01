@@ -23,7 +23,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { diffLines, diffStats, type DiffLine } from "@/lib/diff";
+import { diffWords, type DiffSpan } from "@/lib/diff";
 
 interface Requirement {
   keyword: string;
@@ -450,19 +450,20 @@ function ResultView({
   onAdjust: () => void;
   onRestart: () => void;
 }) {
-  const [showDiff, setShowDiff] = useState(true);
+  const [tab, setTab] = useState<"pdf" | "changes">("pdf");
 
-  const original = tailorJob.originalText ?? "";
-  const optimized = tailorJob.optimizedText ?? "";
-  const lines: DiffLine[] = diffLines(original, optimized);
-  const stats = diffStats(lines);
+  const spans: DiffSpan[] = diffWords(
+    tailorJob.originalText ?? "",
+    tailorJob.optimizedText ?? ""
+  );
+  const added = spans.filter((s) => s.op === "added").length;
   const before = tailorJob.scoreBefore ?? 0;
   const after = tailorJob.scoreAfter ?? 0;
   const delta = after - before;
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3">
+      <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-2.5">
         <span className="flex items-center gap-2 text-sm">
           <span className="text-subtle">ATS</span>
           <span className="font-semibold text-muted">{before}%</span>
@@ -470,83 +471,117 @@ function ResultView({
           <span className="font-bold text-emerald-500">{after}%</span>
           {delta > 0 && <Badge variant="success">+{delta}</Badge>}
         </span>
-        <span className="text-xs text-subtle">
-          <span className="text-emerald-500">+{stats.added}</span> /{" "}
-          <span className="text-red-500">−{stats.removed}</span> lines
-        </span>
-        <button
-          onClick={() => setShowDiff(!showDiff)}
-          className="ml-auto text-xs font-medium text-brand-500 hover:text-brand-400"
-        >
-          {showDiff ? "Show clean version" : "Show changes"}
-        </button>
+
+        <div className="ml-auto flex rounded-lg border border-line p-0.5">
+          <button
+            onClick={() => setTab("pdf")}
+            className={cn(
+              "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              tab === "pdf"
+                ? "bg-raised text-fg"
+                : "text-subtle hover:text-fg"
+            )}
+          >
+            Resume preview
+          </button>
+          <button
+            onClick={() => setTab("changes")}
+            className={cn(
+              "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              tab === "changes"
+                ? "bg-raised text-fg"
+                : "text-subtle hover:text-fg"
+            )}
+          >
+            Changes{added > 0 ? ` (${added})` : ""}
+          </button>
+        </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-        {(tailorJob.keywordsAdded?.length ?? 0) > 0 && (
-          <div className="mb-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
-              Keywords added
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {tailorJob.keywordsAdded!.map((k) => (
-                <Badge key={k} variant="brand">
-                  {k}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="overflow-hidden rounded-xl border border-line">
-          {showDiff ? (
-            <div className="divide-y divide-line/50 font-mono text-xs">
-              {lines.map((l, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex gap-2 px-3 py-1",
-                    l.op === "added" &&
-                      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-                    l.op === "removed" &&
-                      "bg-red-500/10 text-red-700/80 line-through dark:text-red-300/80",
-                    l.op === "same" && "text-muted"
-                  )}
-                >
-                  <span className="w-3 shrink-0 select-none opacity-60">
-                    {l.op === "added" ? "+" : l.op === "removed" ? "−" : ""}
-                  </span>
-                  <span className="whitespace-pre-wrap break-words">
-                    {l.text || " "}
-                  </span>
-                </div>
-              ))}
-            </div>
+      {tab === "pdf" ? (
+        <div className="min-h-0 flex-1 bg-raised/40">
+          {tailorJob.pdfUrl ? (
+            <iframe
+              src={`${tailorJob.pdfUrl}#toolbar=0&navpanes=0&view=FitH`}
+              title="Tailored resume preview"
+              className="h-full w-full border-0"
+            />
           ) : (
-            <pre className="whitespace-pre-wrap px-4 py-3 font-mono text-xs leading-relaxed text-muted">
-              {optimized}
-            </pre>
+            <div className="flex h-full items-center justify-center text-sm text-subtle">
+              Preview unavailable — use Download PDF below.
+            </div>
           )}
         </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          {(tailorJob.keywordsAdded?.length ?? 0) > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
+                Keywords added
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {tailorJob.keywordsAdded!.map((k) => (
+                  <Badge key={k} variant="brand">
+                    {k}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
 
-        {(tailorJob.changesSummary?.length ?? 0) > 0 && (
-          <div className="mt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
-              What changed
-            </p>
-            <ul className="space-y-1.5">
-              {tailorJob.changesSummary!.map((c, i) => (
-                <li key={i} className="flex gap-2 text-sm text-muted">
-                  <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-500" />
-                  {c}
-                </li>
-              ))}
-            </ul>
+          {(tailorJob.changesSummary?.length ?? 0) > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
+                What changed
+              </p>
+              <ul className="space-y-1.5">
+                {tailorJob.changesSummary!.map((c, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-muted">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-500" />
+                    {c}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
+            Marked-up text —{" "}
+            <span className="normal-case">
+              <span className="rounded bg-emerald-500/15 px-1 text-emerald-700 dark:text-emerald-300">
+                added
+              </span>{" "}
+              ·{" "}
+              <span className="rounded bg-red-500/10 px-1 text-red-600/80 line-through dark:text-red-300/70">
+                removed
+              </span>
+            </span>
+          </p>
+          <div className="rounded-xl border border-line px-4 py-3 text-[13px] leading-relaxed text-muted">
+            {spans.map((sp, i) =>
+              sp.op === "same" ? (
+                <span key={i}>{sp.text} </span>
+              ) : sp.op === "added" ? (
+                <span
+                  key={i}
+                  className="rounded bg-emerald-500/15 px-0.5 text-emerald-700 dark:text-emerald-300"
+                >
+                  {sp.text}{" "}
+                </span>
+              ) : (
+                <span
+                  key={i}
+                  className="rounded bg-red-500/10 px-0.5 text-red-600/70 line-through decoration-red-500/50 dark:text-red-300/60"
+                >
+                  {sp.text}{" "}
+                </span>
+              )
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="flex flex-wrap gap-2 border-t border-line px-5 py-4">
+      <div className="flex flex-wrap gap-2 border-t border-line px-5 py-3.5">
         <Button variant="ghost" size="sm" onClick={onAdjust}>
           <ArrowLeft className="h-4 w-4" /> Adjust
         </Button>
