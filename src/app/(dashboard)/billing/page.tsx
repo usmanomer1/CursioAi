@@ -1,7 +1,7 @@
 "use client";
 
 import { PricingTable, useAuth } from "@clerk/nextjs";
-import { Check, CreditCard, Sparkles } from "lucide-react";
+import { Check, CreditCard, Lock, Sparkles } from "lucide-react";
 import { useClerkAppearance } from "@/components/clerk-appearance";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,38 +30,67 @@ export default function BillingPage() {
 
       {/* Current status */}
       <Card className="mb-8 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line bg-gradient-to-r from-brand-500/8 to-transparent px-6 py-5">
+        <div
+          className={`flex flex-wrap items-center justify-between gap-4 border-b border-line px-6 py-5 ${
+            subscribed
+              ? "bg-gradient-to-r from-brand-500/8 to-transparent"
+              : "bg-raised/40"
+          }`}
+        >
           <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 shadow-lg shadow-brand-600/20">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                subscribed
+                  ? "bg-gradient-to-br from-brand-500 to-accent-500 shadow-lg shadow-brand-600/20"
+                  : "bg-raised ring-1 ring-line-strong"
+              }`}
+            >
+              {subscribed ? (
+                <Sparkles className="h-5 w-5 text-white" />
+              ) : (
+                <Lock className="h-5 w-5 text-subtle" />
+              )}
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-subtle">
                 Current plan
               </p>
               <p className="flex items-center gap-2 text-lg font-semibold text-fg">
-                {subscribed ? "Cursio Pro" : "Free"}
+                {subscribed ? "Cursio Pro" : "No active plan"}
                 {subscribed && <Badge variant="success">Active</Badge>}
               </p>
             </div>
           </div>
-          <p className="flex items-center gap-2 text-xs text-subtle">
-            <CreditCard className="h-3.5 w-3.5" />
-            Manage payment via your account menu → Billing
-          </p>
+          {subscribed ? (
+            <p className="flex items-center gap-2 text-xs text-subtle">
+              <CreditCard className="h-3.5 w-3.5" />
+              Manage payment via your account menu → Billing
+            </p>
+          ) : (
+            <p className="text-xs text-subtle">
+              Subscribe to unlock Cursio.
+            </p>
+          )}
         </div>
 
-        <div className="grid gap-2.5 px-6 py-5 sm:grid-cols-2">
-          {INCLUDED.map((f) => (
-            <div key={f} className="flex items-start gap-2.5 text-sm">
-              <Check
-                className={`mt-0.5 h-4 w-4 shrink-0 ${
-                  subscribed ? "text-emerald-500" : "text-subtle"
-                }`}
-              />
-              <span className={subscribed ? "text-muted" : "text-subtle"}>{f}</span>
-            </div>
-          ))}
+        <div className="px-6 py-5">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-subtle">
+            {subscribed ? "Included in your plan" : "Locked without a plan"}
+          </p>
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            {INCLUDED.map((f) => (
+              <div key={f} className="flex items-start gap-2.5 text-sm">
+                {subscribed ? (
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                ) : (
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-subtle" />
+                )}
+                <span className={subscribed ? "text-muted" : "text-subtle"}>
+                  {f}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </Card>
 
