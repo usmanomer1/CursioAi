@@ -25,7 +25,7 @@ import { api } from "@convex/_generated/api";
 import { JobChatPanel } from "@/components/job-chat-panel";
 import { TailorResumeDialog } from "@/components/tailor-resume-dialog";
 import { ResizableSplit } from "@/components/resizable-split";
-import { MatchBadge } from "@/components/match-badge";
+import { MatchBadge, MatchRing } from "@/components/match-badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -479,10 +479,7 @@ function JobsPageInner() {
                       {selectedJob.employer_name}
                     </p>
                   </div>
-                  <MatchBadge
-                    score={selectedJob.match_score}
-                    label={selectedJob.match_label}
-                  />
+                  <MatchRing score={selectedJob.match_score} />
                 </div>
 
                 <div className="mb-4 flex flex-wrap gap-2">
