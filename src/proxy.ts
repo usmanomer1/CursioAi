@@ -6,6 +6,9 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/terms",
   "/privacy",
+  // Clerk's same-origin Frontend API / clerk-js proxy (see app/__clerk route).
+  // Must never be auth-protected — these requests bootstrap auth itself.
+  "/__clerk(.*)",
 ]);
 export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {

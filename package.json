@@ -17,7 +17,7 @@
     "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.9",
+    "@clerk/nextjs": "^7.6.4",
     "@convex-dev/agent": "^0.6.4",
     "@convex-dev/rate-limiter": "^0.3.2",
     "@openrouter/ai-sdk-provider": "^2.9.1",
