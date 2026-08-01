@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { BrandMark, COMPANY_LOGOS } from "@/components/company-logos";
 import { cn } from "@/lib/utils";
 
 /**
@@ -66,19 +67,6 @@ export const TESTIMONIALS: Testimonial[] = [
     quote:
       "Applied to 30 jobs in a weekend with resumes that each felt hand-written. The tracker kept me sane after.",
   },
-];
-
-export const COMPANIES = [
-  "Goldman Sachs",
-  "Google",
-  "Amazon",
-  "Meta",
-  "Stripe",
-  "Shopify",
-  "Microsoft",
-  "RBC",
-  "Deloitte",
-  "Scotiabank",
 ];
 
 const AVATAR_TONES = [
@@ -175,15 +163,15 @@ export function CompanyMarquee({ label }: { label?: string }) {
       )}
       <div className="overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
         <div
-          className="flex w-max items-center gap-14 hover:[animation-play-state:paused]"
-          style={{ animation: "marquee-x 35s linear infinite" }}
+          className="flex w-max items-center gap-12 hover:[animation-play-state:paused]"
+          style={{ animation: "marquee-x 40s linear infinite" }}
         >
-          {[...COMPANIES, ...COMPANIES].map((c, i) => (
+          {[...COMPANY_LOGOS, ...COMPANY_LOGOS].map((brand, i) => (
             <span
               key={i}
-              className="whitespace-nowrap text-lg font-semibold tracking-tight text-subtle/70 transition-colors hover:text-fg"
+              className="text-subtle/60 transition-colors hover:text-fg"
             >
-              {c}
+              <BrandMark brand={brand} />
             </span>
           ))}
         </div>

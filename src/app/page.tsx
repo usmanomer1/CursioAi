@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import { ArrowRight } from "lucide-react";
 import {
-  ArrowRight,
-  Check,
-  FileText,
-  MessageSquare,
+  ChatsCircle,
+  CheckCircle,
+  Crosshair,
+  FileArrowDown,
+  Lightning,
+  MagicWand,
+  MagnifyingGlass,
+  PaperPlaneTilt,
   ShieldCheck,
-  Target,
-  Wand2,
-} from "lucide-react";
+  UploadSimple,
+} from "@phosphor-icons/react/dist/ssr";
 import { Logo, LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -18,28 +22,50 @@ import {
   TestimonialsMarquee,
 } from "@/components/testimonials";
 
-const features = [
+const FEATURES = [
   {
-    icon: Target,
+    icon: Crosshair,
     title: "Matched, not scraped",
     desc: "Every listing is scored 0–100 against your actual resume, with the reasons and the gaps spelled out.",
   },
   {
-    icon: Wand2,
+    icon: MagicWand,
     title: "A resume per job",
     desc: "Pick the requirements you want addressed, then get a tailored one-page ATS resume — never invented, just sharpened.",
   },
   {
-    icon: MessageSquare,
+    icon: ChatsCircle,
     title: "A coach that read the posting",
     desc: "Ask about fit, gaps or interview prep. It already has the job description and your resume loaded.",
   },
 ];
 
-const steps = [
-  { n: "01", title: "Upload your resume", desc: "We parse it once and keep it ready." },
-  { n: "02", title: "Search real openings", desc: "Live roles, ranked against your experience." },
-  { n: "03", title: "Tailor and apply", desc: "One-page resume per role, tracked end to end." },
+const STATS = [
+  { value: "800+", label: "job seekers on Cursio" },
+  { value: "0–100", label: "match score on every listing" },
+  { value: "1 page", label: "ATS-clean resume, every time" },
+  { value: "<60s", label: "from posting to tailored PDF" },
+];
+
+const STEPS = [
+  {
+    icon: UploadSimple,
+    n: "01",
+    title: "Upload your resume",
+    desc: "We parse it once and keep it ready.",
+  },
+  {
+    icon: MagnifyingGlass,
+    n: "02",
+    title: "Search real openings",
+    desc: "Live roles, ranked against your experience.",
+  },
+  {
+    icon: PaperPlaneTilt,
+    n: "03",
+    title: "Tailor and apply",
+    desc: "One-page resume per role, tracked end to end.",
+  },
 ];
 
 export default async function HomePage() {
@@ -74,7 +100,7 @@ export default async function HomePage() {
           }}
         />
 
-        <div className="relative mx-auto max-w-3xl px-6 pb-20 pt-20 text-center sm:pt-28">
+        <div className="relative mx-auto max-w-3xl px-6 pb-16 pt-20 text-center sm:pt-28">
           <h1 className="text-balance text-5xl font-bold leading-[1.06] tracking-tight text-fg sm:text-7xl">
             Stop rewriting your resume for every job.
           </h1>
@@ -98,13 +124,16 @@ export default async function HomePage() {
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-subtle">
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-emerald-500" /> One-page ATS format
+              <CheckCircle weight="fill" className="h-4 w-4 text-emerald-500" />
+              One-page ATS format
             </span>
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Never invents experience
+              <ShieldCheck weight="fill" className="h-4 w-4 text-emerald-500" />
+              Never invents experience
             </span>
             <span className="flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-emerald-500" /> Cancel anytime
+              <Lightning weight="fill" className="h-4 w-4 text-emerald-500" />
+              Cancel anytime
             </span>
           </div>
         </div>
@@ -182,18 +211,39 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Stats band */}
+      <section className="border-y border-line bg-surface/60">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-x-6 gap-y-8 px-6 py-10 sm:grid-cols-4">
+          {STATS.map((s) => (
+            <div key={s.label} className="text-center">
+              <p className="bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-3xl font-bold tabular-nums text-transparent">
+                {s.value}
+              </p>
+              <p className="mt-1.5 text-xs text-subtle">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features */}
-      <section className="mx-auto max-w-5xl px-6 pb-4">
+      <section className="mx-auto max-w-5xl px-6 py-20">
+        <div className="mb-10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
+            Why Cursio
+          </p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-fg">
+            Built around your resume, not the job board
+          </h2>
+        </div>
         <div className="grid gap-5 md:grid-cols-3">
-          {features.map(({ icon: Icon, title, desc }) => (
+          {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="group rounded-2xl border border-line bg-surface p-6 transition-all hover:border-brand-500/40 hover:shadow-lg"
+              className="group relative overflow-hidden rounded-2xl border border-line bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-xl hover:shadow-brand-500/5"
             >
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500/15 to-accent-500/10 text-brand-500 ring-1 ring-brand-500/20">
-                <Icon className="h-5 w-5" />
-              </div>
-              <h3 className="mb-2 font-semibold text-fg">{title}</h3>
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/10 opacity-0 blur-2xl transition-opacity group-hover:opacity-100" />
+              <Icon weight="duotone" className="h-9 w-9 text-brand-500" />
+              <h3 className="mb-2 mt-4 font-semibold text-fg">{title}</h3>
               <p className="text-sm leading-relaxed text-muted">{desc}</p>
             </div>
           ))}
@@ -201,15 +251,18 @@ export default async function HomePage() {
       </section>
 
       {/* Steps */}
-      <section className="mx-auto max-w-5xl px-6 py-16">
+      <section className="mx-auto max-w-5xl px-6 pb-20">
         <div className="grid gap-8 rounded-3xl border border-line bg-surface p-8 sm:grid-cols-3 sm:p-10">
-          {steps.map((s) => (
-            <div key={s.n}>
-              <span className="font-mono text-xs font-bold text-brand-500">
-                {s.n}
-              </span>
-              <h3 className="mt-2 font-semibold text-fg">{s.title}</h3>
-              <p className="mt-1 text-sm text-muted">{s.desc}</p>
+          {STEPS.map(({ icon: Icon, n, title, desc }) => (
+            <div key={n}>
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500/15 to-accent-500/10 ring-1 ring-brand-500/20">
+                  <Icon weight="duotone" className="h-5 w-5 text-brand-500" />
+                </span>
+                <span className="font-mono text-xs font-bold text-subtle">{n}</span>
+              </div>
+              <h3 className="mt-4 font-semibold text-fg">{title}</h3>
+              <p className="mt-1 text-sm text-muted">{desc}</p>
             </div>
           ))}
         </div>
@@ -218,13 +271,12 @@ export default async function HomePage() {
       {/* Reviews */}
       <section className="mx-auto max-w-6xl px-6 pb-20">
         <div className="mb-8 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-fg">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
+            Results
+          </p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-fg">
             The job search, minus the grind
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-muted">
-            From first search to signed offer — here&apos;s how it&apos;s going
-            for people using Cursio.
-          </p>
         </div>
         <TestimonialsMarquee />
       </section>
@@ -244,6 +296,10 @@ export default async function HomePage() {
               Get started <ArrowRight className="h-5 w-5" />
             </Link>
           </Button>
+          <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-subtle">
+            <FileArrowDown weight="duotone" className="h-4 w-4 text-brand-500" />
+            Download-ready PDFs from day one
+          </p>
         </div>
       </section>
 
