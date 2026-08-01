@@ -63,6 +63,52 @@ export const structuredResumeSchema = z.object({
 
 export type StructuredResume = z.infer<typeof structuredResumeSchema>;
 
+/**
+ * Extracts the ATS requirements a resume is missing for a specific job, so the
+ * user can pick which ones to weave in before generating a tailored resume.
+ */
+export const jobRequirementsSchema = z.object({
+  requirements: z
+    .array(
+      z.object({
+        keyword: z.string(),
+        kind: z.enum(["skill", "tool", "qualification", "responsibility"]),
+        importance: z.enum(["critical", "preferred", "nice_to_have"]),
+        rationale: z.string(),
+        alreadyPresent: z.boolean(),
+      })
+    )
+    .max(18),
+});
+
+export type JobRequirements = z.infer<typeof jobRequirementsSchema>;
+
+export function buildRequirementsPrompt(input: {
+  resumeText: string;
+  jobDescription: string;
+  jobTitle: string;
+  companyName: string;
+}): string {
+  return `You are an ATS analyst. Compare this resume against the target job and list the concrete requirements an ATS would scan for.
+
+TARGET JOB: ${input.jobTitle} at ${input.companyName}
+
+JOB DESCRIPTION:
+${input.jobDescription.slice(0, 3000)}
+
+RESUME:
+${input.resumeText.slice(0, 4000)}
+
+Return up to 18 requirements, ordered most important first. For each:
+- keyword: the exact term an ATS would match (e.g. "TypeScript", "CI/CD", "Bachelor's in CS")
+- kind: skill | tool | qualification | responsibility
+- importance: critical | preferred | nice_to_have
+- rationale: one short sentence on why the job needs it
+- alreadyPresent: true if the resume already demonstrates it clearly
+
+Prioritize items that are ABSENT from the resume (alreadyPresent: false) — those are what the candidate needs to address.`;
+}
+
 export function buildCombinedOptimizePrompt(input: {
   resumeText: string;
   jobDescription: string;

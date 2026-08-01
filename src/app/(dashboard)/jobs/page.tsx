@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Sparkles,
   MessageCircle,
+  Wand2,
   SlidersHorizontal,
   Building2,
   Briefcase,
@@ -21,6 +22,8 @@ import {
 import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
 import { JobChatPanel } from "@/components/job-chat-panel";
+import { TailorResumeDialog } from "@/components/tailor-resume-dialog";
+import { ResizableSplit } from "@/components/resizable-split";
 import { MatchBadge } from "@/components/match-badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -88,6 +91,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<JobResult[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobResult | null>(null);
   const [chatJob, setChatJob] = useState<JobResult | null>(null);
+  const [tailorJob, setTailorJob] = useState<JobResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [useAI, setUseAI] = useState(true);
@@ -227,9 +231,11 @@ export default function JobsPage() {
 
   return (
     <>
-      <div className="flex h-[calc(100vh-3.5rem)] flex-col md:h-screen lg:flex-row">
-        {/* Search + list */}
-        <div className="flex min-h-0 flex-1 flex-col border-line lg:border-r">
+      <ResizableSplit
+        className="h-[calc(100vh-3.5rem)] md:h-screen"
+        left={
+          /* Search + list */
+          <div className="flex min-h-0 flex-1 flex-col">
           <div className="border-b border-line p-4">
             <h1 className="mb-3 text-xl font-bold text-fg">Job Search</h1>
 
@@ -413,8 +419,10 @@ export default function JobsPage() {
           </div>
         </div>
 
-        {/* Detail */}
-        <div className="flex max-h-full w-full min-h-0 flex-col lg:w-[460px] xl:w-[520px]">
+        }
+        right={
+          /* Detail */
+          <div className="flex max-h-full w-full min-h-0 flex-col">
           {selectedJob ? (
             <>
               <div className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -522,34 +530,51 @@ export default function JobsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 border-t border-line p-4">
-                <Button
-                  variant={likedIds.has(selectedJob.job_id) ? "destructive" : "secondary"}
-                  className="flex-1"
-                  onClick={() => void toggleLike(selectedJob)}
-                >
-                  <Heart
-                    className={cn(
-                      "h-4 w-4",
-                      likedIds.has(selectedJob.job_id) && "fill-current"
-                    )}
-                  />
-                  {likedIds.has(selectedJob.job_id) ? "Saved" : "Save"}
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => setChatJob(selectedJob)}
-                >
-                  <MessageCircle className="h-4 w-4" /> Ask AI
-                </Button>
+              <div className="space-y-2 border-t border-line p-4">
+                {/* Primary action — the differentiating feature */}
                 <Button
                   variant="brand"
-                  className="flex-1"
-                  onClick={() => void handleApply(selectedJob)}
+                  className="w-full"
+                  onClick={() => setTailorJob(selectedJob)}
                 >
-                  <ExternalLink className="h-4 w-4" /> Apply
+                  <Wand2 className="h-4 w-4" />
+                  Generate custom resume for this job
                 </Button>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant={
+                      likedIds.has(selectedJob.job_id) ? "destructive" : "secondary"
+                    }
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => void toggleLike(selectedJob)}
+                  >
+                    <Heart
+                      className={cn(
+                        "h-4 w-4",
+                        likedIds.has(selectedJob.job_id) && "fill-current"
+                      )}
+                    />
+                    {likedIds.has(selectedJob.job_id) ? "Saved" : "Save"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setChatJob(selectedJob)}
+                  >
+                    <MessageCircle className="h-4 w-4" /> Ask AI
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => void handleApply(selectedJob)}
+                  >
+                    <ExternalLink className="h-4 w-4" /> Apply
+                  </Button>
+                </div>
               </div>
             </>
           ) : (
@@ -557,8 +582,16 @@ export default function JobsPage() {
               Select a job to view details
             </div>
           )}
-        </div>
-      </div>
+          </div>
+        }
+      />
+
+      {tailorJob && (
+        <TailorResumeDialog
+          job={tailorJob}
+          onClose={() => setTailorJob(null)}
+        />
+      )}
 
       {chatJob && (
         <JobChatPanel

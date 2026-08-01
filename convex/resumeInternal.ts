@@ -101,6 +101,43 @@ export const getPrimaryResumeLinks = internalQuery({
   },
 });
 
+export const getPrimaryResume = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("resumes")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("isPrimary"), true))
+      .first();
+  },
+});
+
+/** Persist a generation that was tailored to a specific job posting. */
+export const saveJobGeneration = internalMutation({
+  args: {
+    userId: v.id("users"),
+    jobId: v.string(),
+    jobTitle: v.string(),
+    companyName: v.string(),
+    optimizedText: v.string(),
+    structuredResume: v.optional(v.any()),
+    changesSummary: v.array(v.string()),
+    keywordsAdded: v.array(v.string()),
+    scoreBefore: v.optional(v.number()),
+    scoreAfter: v.optional(v.number()),
+    storageId: v.optional(v.id("_storage")),
+    fileName: v.optional(v.string()),
+  },
+  returns: v.id("resumeGenerations"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("resumeGenerations", {
+      ...args,
+      status: "completed",
+      createdAt: Date.now(),
+    });
+  },
+});
+
 export const getLatestGenerationForAnalysis = internalQuery({
   args: { analysisId: v.id("resumeAnalyses") },
   handler: async (ctx, args) => {

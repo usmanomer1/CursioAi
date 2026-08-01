@@ -65,17 +65,23 @@
   --color-muted: var(--muted);
   --color-subtle: var(--subtle);
 
-  /* Brand accent (violet) — identical in both themes */
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
+  /* Brand accent — matches the Cursio mark (blue → cyan) */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #2e7bf6;
+  --color-brand-600: #1d4ed8;
+  --color-brand-700: #1e40af;
+  --color-brand-800: #1e3a8a;
+  --color-brand-900: #172554;
+
+  /* Secondary accent used in the logo's cyan fold */
+  --color-accent-300: #67e8f9;
+  --color-accent-400: #38e0f0;
+  --color-accent-500: #22d3ee;
+  --color-accent-600: #06b6d4;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -194,6 +200,14 @@ body {
   );
   background-size: 200% 100%;
   animation: var(--animate-shimmer);
+}
+
+/* Resizable split: the --split width only applies side-by-side (lg+). */
+@media (min-width: 1024px) {
+  .split-pane {
+    width: var(--split, 46%);
+    flex: none;
+  }
 }
 
 .bg-grid {

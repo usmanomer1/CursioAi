@@ -92,7 +92,12 @@ export default defineSchema({
 
   resumeGenerations: defineTable({
     userId: v.id("users"),
-    analysisId: v.id("resumeAnalyses"),
+    // Optional: generations started from a job listing have no prior analysis.
+    analysisId: v.optional(v.id("resumeAnalyses")),
+    // Set when the generation was tailored to a specific job posting.
+    jobId: v.optional(v.string()),
+    jobTitle: v.optional(v.string()),
+    companyName: v.optional(v.string()),
     optimizedText: v.string(),
     structuredResume: v.optional(v.any()),
     changesSummary: v.optional(v.array(v.string())),
@@ -111,7 +116,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_user", ["userId", "createdAt"])
-    .index("by_analysis", ["analysisId"]),
+    .index("by_analysis", ["analysisId"])
+    .index("by_user_job", ["userId", "jobId"]),
 
   optimizationCache: defineTable({
     cacheKey: v.string(),

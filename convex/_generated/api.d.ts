@@ -15,6 +15,7 @@ import type * as applications from "../applications.js";
 import type * as gating from "../gating.js";
 import type * as jobChat from "../jobChat.js";
 import type * as jobChatInternal from "../jobChatInternal.js";
+import type * as jobResume from "../jobResume.js";
 import type * as jobs from "../jobs.js";
 import type * as lib_ai_models from "../lib/ai/models.js";
 import type * as lib_ai_openrouter from "../lib/ai/openrouter.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   gating: typeof gating;
   jobChat: typeof jobChat;
   jobChatInternal: typeof jobChatInternal;
+  jobResume: typeof jobResume;
   jobs: typeof jobs;
   "lib/ai/models": typeof lib_ai_models;
   "lib/ai/openrouter": typeof lib_ai_openrouter;
