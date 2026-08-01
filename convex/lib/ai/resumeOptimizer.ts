@@ -64,6 +64,93 @@ export const structuredResumeSchema = z.object({
 export type StructuredResume = z.infer<typeof structuredResumeSchema>;
 
 /**
+ * Generation variant for OpenAI/Azure strict structured outputs, which
+ * require EVERY key to appear in `required` — optionality must be expressed
+ * as `.nullable()`, not `.optional()`. (DeepSeek/Gemini tolerate optional;
+ * Azure rejects the schema outright: "'required' is required ... including
+ * every key in properties".) Convert nulls back with stripNulls() before
+ * passing the result downstream.
+ */
+const nstr = z.string().nullable();
+
+export const structuredResumeGenerationSchema = z.object({
+  contact: z.object({
+    name: z.string(),
+    email: nstr,
+    phone: nstr,
+    linkedin: nstr,
+    github: nstr,
+    location: nstr,
+  }),
+  summary: nstr,
+  experience: z.array(
+    z.object({
+      company: z.string(),
+      title: z.string(),
+      location: nstr,
+      startDate: nstr,
+      endDate: nstr,
+      bullets: z.array(z.string()),
+    })
+  ),
+  education: z.array(
+    z.object({
+      institution: z.string(),
+      degree: z.string(),
+      location: nstr,
+      graduationDate: nstr,
+      startDate: nstr,
+      endDate: nstr,
+      details: z.array(z.string()).nullable(),
+    })
+  ),
+  projects: z
+    .array(
+      z.object({
+        name: z.string(),
+        link: nstr,
+        linkLabel: nstr,
+        technologies: nstr,
+        dates: nstr,
+        bullets: z.array(z.string()),
+      })
+    )
+    .nullable(),
+  skills: z.object({
+    categories: z.array(
+      z.object({
+        category: z.string(),
+        items: z.string(),
+      })
+    ),
+  }),
+  optimization_summary: z.object({
+    keywords_added: z.array(z.string()),
+    changes_made: z.array(z.string()),
+    ats_score_before: z.number(),
+    ats_score_after: z.number(),
+  }),
+});
+
+/** Recursively convert nulls to undefined so the rest of the pipeline sees
+ * the same optional-field shape it always has. */
+export function stripNulls<T>(value: T): T {
+  if (value === null) return undefined as T;
+  if (Array.isArray(value)) {
+    return value.map((v) => stripNulls(v)) as T;
+  }
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      const stripped = stripNulls(v);
+      if (stripped !== undefined) out[k] = stripped;
+    }
+    return out as T;
+  }
+  return value;
+}
+
+/**
  * Extracts the ATS requirements a resume is missing for a specific job, so the
  * user can pick which ones to weave in before generating a tailored resume.
  */

@@ -21,6 +21,10 @@ const kindTone = {
   tailor_error: "text-red-500 bg-red-500/10",
 } as const;
 
+// The bell is mounted twice (desktop sidebar + mobile top bar), so the toast
+// baseline/dedupe must be shared across instances — module scope, not a ref.
+let lastToastedId: string | null | undefined = undefined;
+
 function timeAgo(ts: number): string {
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 60) return "just now";
@@ -29,7 +33,7 @@ function timeAgo(ts: number): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-export function NotificationsBell() {
+export function NotificationsBell({ direction = "down" }: { direction?: "up" | "down" }) {
   const router = useRouter();
   const notifications = useQuery(api.notifications.list);
   const unread = useQuery(api.notifications.unreadCount) ?? 0;
@@ -39,19 +43,17 @@ export function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Live toast for notifications that arrive while the app is open. The ref
-  // tracks the newest id we've seen; toast() is an external system, so an
-  // effect is the right tool here (no setState involved).
-  const newestSeenRef = useRef<string | null | undefined>(undefined);
+  // Live toast for notifications that arrive while the app is open. toast()
+  // is an external system, so an effect is the right tool (no setState).
   useEffect(() => {
     if (!notifications) return;
     const newest = notifications[0];
-    if (newestSeenRef.current === undefined) {
-      newestSeenRef.current = newest?._id ?? null; // baseline on first load
+    if (lastToastedId === undefined) {
+      lastToastedId = newest?._id ?? null; // baseline on first load
       return;
     }
-    if (newest && newest._id !== newestSeenRef.current) {
-      newestSeenRef.current = newest._id;
+    if (newest && newest._id !== lastToastedId) {
+      lastToastedId = newest._id;
       if (!newest.read) {
         const show =
           newest.kind === "tailor_error" ? toast.error : toast.success;
@@ -105,7 +107,12 @@ export function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl [animation:var(--animate-fade-in)]">
+        <div
+          className={cn(
+            "absolute right-0 z-50 w-80 overflow-hidden rounded-xl border border-line bg-surface shadow-2xl [animation:var(--animate-fade-in)]",
+            direction === "up" ? "bottom-11" : "top-11"
+          )}
+        >
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
             <p className="text-sm font-semibold text-fg">Notifications</p>
             {unread > 0 && (

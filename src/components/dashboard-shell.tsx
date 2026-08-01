@@ -77,7 +77,7 @@ function UserCard() {
           {user?.primaryEmailAddress?.emailAddress}
         </p>
       </div>
-      <NotificationsBell />
+      <NotificationsBell direction="up" />
       <ThemeToggle className="shrink-0" />
     </div>
   );

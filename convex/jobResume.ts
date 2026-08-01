@@ -9,7 +9,8 @@ import {
   buildRequirementsPrompt,
   jobRequirementsSchema,
   buildCombinedOptimizePrompt,
-  structuredResumeSchema,
+  structuredResumeGenerationSchema,
+  stripNulls,
   structuredResumeToPlainText,
   normalizeStructuredResume,
   type StructuredResume,
@@ -109,11 +110,13 @@ export const runTailorGeneration = internalAction({
           `\n\nMODE: ${modeInstruction}\n\nThe candidate specifically asked you to address these requirements (only where truthful): ${
             selected.join(", ") || "none selected"
           }`,
-        schema: structuredResumeSchema,
+        schema: structuredResumeGenerationSchema,
         temperature: mode === "quick" ? 0.25 : 0.4,
       });
 
-      const normalized: StructuredResume = normalizeStructuredResume(structured);
+      const normalized: StructuredResume = normalizeStructuredResume(
+        stripNulls(structured) as StructuredResume
+      );
       const optimizedText = structuredResumeToPlainText(normalized);
 
       const pdfBytes = await generateResumePdf(

@@ -14,7 +14,8 @@ import {
 } from "./lib/ai/scoring";
 import {
   buildCombinedOptimizePrompt,
-  structuredResumeSchema,
+  structuredResumeGenerationSchema,
+  stripNulls,
   structuredResumeToPlainText,
   normalizeStructuredResume,
   type StructuredResume,
@@ -190,11 +191,13 @@ export const optimizeResume = action({
       });
 
       structured = normalizeStructuredResume(
-        await generateJson({
-          prompt,
-          schema: structuredResumeSchema,
-          temperature: 0.35,
-        })
+        stripNulls(
+          await generateJson({
+            prompt,
+            schema: structuredResumeGenerationSchema,
+            temperature: 0.35,
+          })
+        ) as StructuredResume
       );
 
       optimizedText = structuredResumeToPlainText(structured);
