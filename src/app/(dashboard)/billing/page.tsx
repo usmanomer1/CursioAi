@@ -97,7 +97,10 @@ export default function BillingPage() {
       <h2 className="mb-4 text-lg font-semibold text-fg">
         {subscribed ? "Change plan" : "Choose a plan"}
       </h2>
-      <PricingTable appearance={appearance} />
+      {/* Single-plan instance: cap the width so the card doesn't stretch. */}
+      <div className="w-full max-w-sm">
+        <PricingTable appearance={appearance} />
+      </div>
     </div>
   );
 }
