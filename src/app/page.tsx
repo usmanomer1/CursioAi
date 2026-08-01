@@ -83,7 +83,7 @@ export default async function HomePage() {
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted">
-            Stop guessing. Jobotic scores every role against your experience,
+            Stop guessing. Cursio scores every role against your experience,
             tailors your resume for the ones worth chasing, and coaches you
             through each application.
           </p>
@@ -134,7 +134,7 @@ export default async function HomePage() {
 
       <footer className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 border-t border-line px-6 py-8 text-sm text-subtle sm:flex-row">
         <div className="flex items-center gap-2">
-          <Briefcase className="h-4 w-4" /> Jobotic — AI job search platform
+          <Briefcase className="h-4 w-4" /> Cursio — AI job search platform
         </div>
         <div className="flex gap-5">
           <Link href="/sign-in" className="hover:text-fg">

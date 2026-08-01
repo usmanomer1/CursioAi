@@ -18,12 +18,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Jobotic — AI Job Search & Resume Optimizer",
-    template: "%s · Jobotic",
+    default: "Cursio — AI Job Search & Resume Optimizer",
+    template: "%s · Cursio",
   },
   description:
     "Find jobs matched to your resume, optimize applications, and get AI coaching for every role.",
-  applicationName: "Jobotic",
+  applicationName: "Cursio",
   keywords: [
     "job search",
     "resume optimizer",

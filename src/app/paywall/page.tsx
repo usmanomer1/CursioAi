@@ -22,7 +22,7 @@ export default function PaywallPage() {
         </div>
         <div className="mb-10 text-center">
           <p className="mb-3 text-sm font-medium uppercase tracking-wider text-brand-500">
-            Jobotic Pro
+            Cursio Pro
           </p>
           <h1 className="mb-4 text-4xl font-bold text-fg">
             Land your next role faster

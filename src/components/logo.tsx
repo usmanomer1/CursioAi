@@ -15,7 +15,7 @@ export function Logo({
       </span>
       {showText && (
         <span className="text-lg font-bold tracking-tight text-fg">
-          Jobotic
+          Cursio
         </span>
       )}
     </span>
