@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+/** Clamp to 0–100, tolerating models that return 0–1 fractions. */
+export function normalizeScore(raw: number): number {
+  const scaled = raw <= 1 ? raw * 100 : raw;
+  return Math.max(0, Math.min(100, Math.round(scaled)));
+}
+
 export const MATCH_LABELS = {
   STRONG: { min: 90, label: "STRONG MATCH" },
   GOOD: { min: 70, label: "GOOD MATCH" },
@@ -193,7 +199,7 @@ export function normalizeScoringResult(
     if (!loose.success) return fallbackScoringResult();
     return {
       ...loose.data,
-      score: Math.max(0, Math.min(100, Math.round(loose.data.score))),
+      score: normalizeScore(loose.data.score),
       matchReasons: loose.data.matchReasons.slice(0, 4),
       missingSkills: loose.data.missingSkills.slice(0, 5),
       keyStrengths: loose.data.keyStrengths.slice(0, 3),
@@ -202,7 +208,7 @@ export function normalizeScoringResult(
   }
   return {
     ...parsed.data,
-    score: Math.max(0, Math.min(100, Math.round(parsed.data.score))),
+    score: normalizeScore(parsed.data.score),
     breakdown: clampBreakdown(parsed.data.breakdown),
   };
 }

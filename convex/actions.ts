@@ -155,7 +155,9 @@ async function matchJobsWithAI(
             result.matches[idx];
           if (!raw) return null;
 
-          const score = Math.max(0, Math.min(100, Math.round(raw.score)));
+          // Some models return 0–1 fractions despite the 0–100 instruction.
+          const rawScore = raw.score <= 1 ? raw.score * 100 : raw.score;
+          const score = Math.max(0, Math.min(100, Math.round(rawScore)));
           return {
             jobId: job.job_id,
             score,
