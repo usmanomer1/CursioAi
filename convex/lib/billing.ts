@@ -24,8 +24,25 @@ export function hasPaidPlan(identity: unknown): boolean {
   return plans.includes(`u:${PAID_PLAN}`) || plans.includes(PAID_PLAN);
 }
 
+/**
+ * Owner/admin bypass. ADMIN_EMAILS is a comma-separated allowlist on the
+ * Convex deployment. Matched against the `email` claim of the *verified*
+ * session JWT — not against anything client-supplied — so it can't be spoofed
+ * by editing profile data.
+ */
+export function isAdmin(identity: unknown): boolean {
+  const allow = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (allow.length === 0) return false;
+  const email = (identity as { email?: unknown } | null)?.email;
+  return typeof email === "string" && allow.includes(email.toLowerCase());
+}
+
 export function assertPaidPlan(identity: unknown): void {
   if (process.env.CLERK_BILLING_ENFORCED !== "true") return;
+  if (isAdmin(identity)) return;
   if (!hasPaidPlan(identity)) {
     throw new Error("An active subscription is required to use this feature.");
   }

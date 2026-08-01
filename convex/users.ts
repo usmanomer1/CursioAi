@@ -13,6 +13,10 @@ export const syncUser = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
+    // Prefer the verified email from the session JWT over the client-supplied
+    // argument, so a user can't write someone else's address into their row.
+    const email = (identity.email ?? args.email).toLowerCase();
+
     const existing = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
@@ -22,7 +26,7 @@ export const syncUser = mutation({
 
     if (existing) {
       await ctx.db.patch(existing._id, {
-        email: args.email,
+        email,
         name: args.name ?? existing.name,
         avatarUrl: args.avatarUrl ?? existing.avatarUrl,
         updatedAt: now,
