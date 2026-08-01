@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { Suspense, useState, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useAction, useQuery } from "convex/react";
 import {
   Search,
@@ -75,11 +76,19 @@ function FilterChip({
   );
 }
 
-export default function JobsPage() {
+function JobsPageInner() {
   const me = useQuery(api.users.getMe);
   const likedJobs = useQuery(api.jobs.getLikedJobs);
   const applications = useQuery(api.applications.list);
   const persisted = useQuery(api.jobs.getLatestSearch);
+
+  // Deep link from a notification: /jobs?tailor=<jobId> reopens that run.
+  const searchParams = useSearchParams();
+  const tailorParam = searchParams.get("tailor");
+  const paramTailor = useQuery(
+    api.tailor.getForJob,
+    tailorParam ? { jobId: tailorParam } : "skip"
+  );
 
   const createSession = useMutation(api.jobs.createSearchSession);
   const searchAndMatch = useAction(api.actions.searchAndMatchJobs);
@@ -94,6 +103,7 @@ export default function JobsPage() {
   const [pickedJob, setPickedJob] = useState<JobResult | null>(null);
   const [chatJob, setChatJob] = useState<JobResult | null>(null);
   const [tailorJob, setTailorJob] = useState<JobResult | null>(null);
+  const [paramHandled, setParamHandled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [useAI, setUseAI] = useState(true);
@@ -116,10 +126,29 @@ export default function JobsPage() {
   const selectedJob = pickedJob ?? jobs[0] ?? null;
   const setSelectedJob = (j: JobResult | null) => setPickedJob(j);
 
+  const selectedTailor = useQuery(
+    api.tailor.getForJob,
+    selectedJob ? { jobId: selectedJob.job_id } : "skip"
+  );
+
   const resumeText = me?.primaryResume?.resumeText ?? "";
   const hasResume = resumeText.length >= 50;
   const likedIds = new Set(likedJobs?.map((j) => j.jobId) ?? []);
   const appliedIds = new Set(applications?.map((a) => a.jobId) ?? []);
+
+  // One-shot: when the deep-linked run loads, open its dialog with the job
+  // details persisted on the record (works even if search results are gone).
+  if (!paramHandled && tailorParam && paramTailor) {
+    setParamHandled(true);
+    setTailorJob({
+      job_id: paramTailor.jobId,
+      job_title: paramTailor.jobTitle,
+      employer_name: paramTailor.companyName,
+      job_description: paramTailor.jobDescription,
+      job_apply_link: paramTailor.jobUrl ?? "",
+      job_is_remote: false,
+    });
+  }
 
   const toggle = (arr: string[], setArr: (v: string[]) => void, val: string) =>
     setArr(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -552,7 +581,14 @@ export default function JobsPage() {
                   onClick={() => setTailorJob(selectedJob)}
                 >
                   <Wand2 className="h-4 w-4" />
-                  Generate custom resume for this job
+                  {selectedTailor?.status === "analyzing" ||
+                  selectedTailor?.status === "generating"
+                    ? "Tailoring in progress — view"
+                    : selectedTailor?.status === "awaiting_selection"
+                      ? "Continue tailoring — review requirements"
+                      : selectedTailor?.status === "done"
+                        ? "View tailored resume"
+                        : "Generate custom resume for this job"}
                 </Button>
 
                 <div className="flex gap-2">
@@ -615,5 +651,14 @@ export default function JobsPage() {
         />
       )}
     </>
+  );
+}
+
+
+export default function JobsPage() {
+  return (
+    <Suspense fallback={null}>
+      <JobsPageInner />
+    </Suspense>
   );
 }

@@ -23,6 +23,24 @@ export const cachedJobDataValidator = v.object({
   key_strengths: v.optional(v.array(v.string())),
 });
 
+/** One ATS requirement surfaced while tailoring a resume to a job. */
+export const tailorRequirementValidator = v.object({
+  keyword: v.string(),
+  kind: v.union(
+    v.literal("skill"),
+    v.literal("tool"),
+    v.literal("qualification"),
+    v.literal("responsibility")
+  ),
+  importance: v.union(
+    v.literal("critical"),
+    v.literal("preferred"),
+    v.literal("nice_to_have")
+  ),
+  rationale: v.string(),
+  alreadyPresent: v.boolean(),
+});
+
 /** Context loaded into the per-job AI coach. */
 export const jobContextValidator = v.object({
   title: v.string(),

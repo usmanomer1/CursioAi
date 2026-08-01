@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationsBell } from "@/components/notifications-bell";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -76,6 +77,7 @@ function UserCard() {
           {user?.primaryEmailAddress?.emailAddress}
         </p>
       </div>
+      <NotificationsBell />
       <ThemeToggle className="shrink-0" />
     </div>
   );
@@ -102,6 +104,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Logo />
         </Link>
         <div className="flex items-center gap-1.5">
+          <NotificationsBell />
           <ThemeToggle />
           <UserButton />
           <button

@@ -1,22 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { useAction } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   Download,
   ExternalLink,
-  FileText,
   Loader2,
+  MoonStar,
+  RotateCcw,
   Sparkles,
+  TriangleAlert,
   Wand2,
   X,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -30,19 +33,6 @@ interface Requirement {
   alreadyPresent: boolean;
 }
 
-interface Result {
-  originalText: string;
-  optimizedText: string;
-  changesSummary: string[];
-  keywordsAdded: string[];
-  scoreBefore: number;
-  scoreAfter: number;
-  pdfUrl: string | null;
-  fileName: string;
-}
-
-type Step = "analyzing" | "select" | "generating" | "result";
-
 const importanceVariant = {
   critical: "danger",
   preferred: "warning",
@@ -55,6 +45,12 @@ const importanceLabel = {
   nice_to_have: "Nice to have",
 } as const;
 
+/**
+ * The tailoring flow renders whatever stage the persistent tailorJobs record
+ * is in — so closing this dialog (or the tab) never loses progress, and
+ * reopening resumes exactly where the run left off. The heavy work happens in
+ * scheduled Convex actions; a notification fires as each stage completes.
+ */
 export function TailorResumeDialog({
   job,
   onClose,
@@ -69,76 +65,57 @@ export function TailorResumeDialog({
   };
   onClose: () => void;
 }) {
-  const analyze = useAction(api.jobResume.analyzeJobRequirements);
-  const generate = useAction(api.jobResume.generateResumeForJob);
+  const tailorJob = useQuery(api.tailor.getForJob, { jobId: job.job_id });
+  const start = useMutation(api.tailor.start);
+  const choose = useMutation(api.tailor.choose);
 
-  const [step, setStep] = useState<Step>("analyzing");
-  const [requirements, setRequirements] = useState<Requirement[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [result, setResult] = useState<Result | null>(null);
-  const [showDiff, setShowDiff] = useState(true);
-  const [started, setStarted] = useState(false);
+  // When viewing a finished run, "Adjust selections" flips back to the picker.
+  const [reSelecting, setReSelecting] = useState(false);
+  const [kicked, setKicked] = useState(false);
 
   const description = job.job_description_clean ?? job.job_description;
 
-  // Kick off analysis once on mount (render-phase latch, no effect needed).
-  if (!started) {
-    setStarted(true);
-    void (async () => {
-      try {
-        const res = await analyze({
-          jobTitle: job.job_title,
-          companyName: job.employer_name,
-          jobDescription: description,
-        });
-        const reqs = res.requirements as Requirement[];
-        setRequirements(reqs);
-        // Pre-tick everything that's missing and matters.
-        setSelected(
-          new Set(
-            reqs
-              .filter((r) => !r.alreadyPresent && r.importance !== "nice_to_have")
-              .map((r) => r.keyword)
-          )
-        );
-        setStep("select");
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Could not analyze this job");
-        onClose();
-      }
-    })();
-  }
-
-  const runGenerate = async (mode: "quick" | "full") => {
-    setStep("generating");
+  const kickOff = async (restart: boolean) => {
     try {
-      const res = await generate({
+      await start({
         jobId: job.job_id,
         jobTitle: job.job_title,
         companyName: job.employer_name,
         jobDescription: description,
         jobUrl: job.job_apply_link,
-        selectedKeywords: [...selected],
-        mode,
+        restart,
       });
-      setResult(res as Result);
-      setStep("result");
+      setReSelecting(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Generation failed");
-      setStep("select");
+      toast.error(e instanceof Error ? e.message : "Could not start tailoring");
+      onClose();
     }
   };
 
-  const toggle = (kw: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(kw)) next.delete(kw);
-      else next.add(kw);
-      return next;
-    });
+  // No run exists yet for this job → start one (render-phase latch).
+  if (tailorJob === null && !kicked) {
+    setKicked(true);
+    void kickOff(false);
+  }
 
-  const missing = requirements.filter((r) => !r.alreadyPresent);
-  const present = requirements.filter((r) => r.alreadyPresent);
+  const submitChoice = async (
+    tailorJobId: Id<"tailorJobs">,
+    selectedKeywords: string[],
+    mode: "quick" | "full"
+  ) => {
+    try {
+      await choose({ tailorJobId, selectedKeywords, mode });
+      setReSelecting(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not start generation");
+    }
+  };
+
+  const status = tailorJob?.status;
+  const showSelection =
+    tailorJob &&
+    (status === "awaiting_selection" ||
+      (reSelecting && tailorJob.requirements?.length));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6">
@@ -169,161 +146,79 @@ export function TailorResumeDialog({
           </button>
         </div>
 
-        {/* Steps */}
-        {step === "analyzing" && (
+        {/* Body — driven by the persisted status */}
+        {(tailorJob === undefined || (tailorJob === null && kicked)) && (
           <Centered>
             <Pulse />
-            <p className="mt-5 font-medium text-fg">Reading the job posting…</p>
-            <p className="mt-1 text-sm text-subtle">
-              Finding what an ATS will scan for.
-            </p>
+            <p className="mt-5 font-medium text-fg">Starting…</p>
           </Centered>
         )}
 
-        {step === "select" && (
-          <>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-              <p className="text-sm text-muted">
-                Pick what to weave in. We only add what your experience can
-                truthfully support — nothing is invented.
-              </p>
-
-              {missing.length > 0 && (
-                <>
-                  <div className="mt-5 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-fg">
-                      Missing from your resume
-                    </h3>
-                    <button
-                      onClick={() =>
-                        setSelected(
-                          selected.size === missing.length
-                            ? new Set()
-                            : new Set(missing.map((r) => r.keyword))
-                        )
-                      }
-                      className="text-xs font-medium text-brand-500 hover:text-brand-400"
-                    >
-                      {selected.size === missing.length
-                        ? "Clear all"
-                        : "Select all"}
-                    </button>
-                  </div>
-                  <div className="mt-2.5 space-y-2">
-                    {missing.map((r) => {
-                      const on = selected.has(r.keyword);
-                      return (
-                        <button
-                          key={r.keyword}
-                          onClick={() => toggle(r.keyword)}
-                          className={cn(
-                            "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors",
-                            on
-                              ? "border-brand-500/50 bg-brand-500/8"
-                              : "border-line hover:border-line-strong hover:bg-raised/50"
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-colors",
-                              on
-                                ? "border-brand-500 bg-brand-500"
-                                : "border-line-strong"
-                            )}
-                          >
-                            {on && <Check className="h-3 w-3 text-white" />}
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="flex flex-wrap items-center gap-2">
-                              <span className="font-medium text-fg">
-                                {r.keyword}
-                              </span>
-                              <Badge variant={importanceVariant[r.importance]}>
-                                {importanceLabel[r.importance]}
-                              </Badge>
-                            </span>
-                            <span className="mt-0.5 block text-xs text-subtle">
-                              {r.rationale}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-
-              {present.length > 0 && (
-                <>
-                  <h3 className="mt-6 text-sm font-semibold text-fg">
-                    Already covered
-                  </h3>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {present.map((r) => (
-                      <Badge key={r.keyword} variant="success">
-                        <Check className="h-3 w-3" /> {r.keyword}
-                      </Badge>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="border-t border-line px-5 py-4">
-              <p className="mb-3 text-xs font-medium text-subtle">
-                {selected.size} selected · choose how much to rewrite
-              </p>
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                <button
-                  onClick={() => void runGenerate("quick")}
-                  className="group rounded-xl border border-line p-3.5 text-left transition-colors hover:border-brand-500/50 hover:bg-raised/50"
-                >
-                  <span className="flex items-center gap-2 font-medium text-fg">
-                    <Zap className="h-4 w-4 text-accent-500" /> Quick edit
-                  </span>
-                  <span className="mt-1 block text-xs text-subtle">
-                    Keeps your wording. Slots keywords in where they fit.
-                  </span>
-                </button>
-                <button
-                  onClick={() => void runGenerate("full")}
-                  className="group rounded-xl border border-brand-500/40 bg-brand-500/8 p-3.5 text-left transition-colors hover:border-brand-500/70"
-                >
-                  <span className="flex items-center gap-2 font-medium text-fg">
-                    <Sparkles className="h-4 w-4 text-brand-500" /> Full rewrite
-                  </span>
-                  <span className="mt-1 block text-xs text-subtle">
-                    Rewrites bullets and reorders for maximum impact.
-                  </span>
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {step === "generating" && (
-          <Centered>
-            <Pulse />
-            <p className="mt-5 font-medium text-fg">Writing your resume…</p>
-            <p className="mt-1 text-sm text-subtle">
-              Tailoring content, then fitting it to one page.
-            </p>
-          </Centered>
-        )}
-
-        {step === "result" && result && (
-          <ResultView
-            result={result}
-            showDiff={showDiff}
-            setShowDiff={setShowDiff}
-            applyLink={job.job_apply_link}
-            onBack={() => setStep("select")}
+        {status === "analyzing" && (
+          <Progress
+            title="Reading the job posting…"
+            subtitle="Finding what an ATS will scan for."
+            onClose={onClose}
           />
+        )}
+
+        {status === "generating" && !reSelecting && (
+          <Progress
+            title="Writing your resume…"
+            subtitle="Tailoring content, then fitting it to one page."
+            onClose={onClose}
+          />
+        )}
+
+        {showSelection && (
+          <SelectStep
+            key={tailorJob!._id}
+            requirements={(tailorJob!.requirements ?? []) as Requirement[]}
+            initialSelected={tailorJob!.selectedKeywords}
+            busy={status === "generating"}
+            onCancelReselect={
+              status === "done" ? () => setReSelecting(false) : undefined
+            }
+            onSubmit={(kw, mode) => void submitChoice(tailorJob!._id, kw, mode)}
+          />
+        )}
+
+        {status === "done" && !reSelecting && (
+          <ResultView
+            tailorJob={tailorJob!}
+            applyLink={job.job_apply_link ?? tailorJob!.jobUrl ?? undefined}
+            onAdjust={() => setReSelecting(true)}
+            onRestart={() => void kickOff(true)}
+          />
+        )}
+
+        {status === "error" && !showSelection && (
+          <Centered>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 ring-1 ring-red-500/25">
+              <TriangleAlert className="h-6 w-6 text-red-500" />
+            </div>
+            <p className="mt-5 font-medium text-fg">Something went wrong</p>
+            <p className="mt-1 max-w-sm text-sm text-subtle">
+              {tailorJob?.errorMessage ?? "Please try again."}
+            </p>
+            <div className="mt-5 flex gap-2">
+              {tailorJob?.requirements?.length ? (
+                <Button variant="secondary" onClick={() => setReSelecting(true)}>
+                  Back to selections
+                </Button>
+              ) : null}
+              <Button variant="brand" onClick={() => void kickOff(true)}>
+                <RotateCcw className="h-4 w-4" /> Try again
+              </Button>
+            </div>
+          </Centered>
         )}
       </div>
     </div>
   );
 }
+
+/* ── pieces ────────────────────────────────────────────────────────────── */
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -344,34 +239,236 @@ function Pulse() {
   );
 }
 
-function ResultView({
-  result,
-  showDiff,
-  setShowDiff,
-  applyLink,
-  onBack,
+function Progress({
+  title,
+  subtitle,
+  onClose,
 }: {
-  result: Result;
-  showDiff: boolean;
-  setShowDiff: (v: boolean) => void;
-  applyLink?: string;
-  onBack: () => void;
+  title: string;
+  subtitle: string;
+  onClose: () => void;
 }) {
-  const lines: DiffLine[] = diffLines(result.originalText, result.optimizedText);
+  return (
+    <Centered>
+      <Pulse />
+      <p className="mt-5 font-medium text-fg">{title}</p>
+      <p className="mt-1 text-sm text-subtle">{subtitle}</p>
+
+      <div className="mt-7 flex max-w-sm items-start gap-2.5 rounded-xl border border-line bg-raised/50 px-4 py-3 text-left">
+        <MoonStar className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+        <p className="text-xs leading-relaxed text-muted">
+          This keeps running in the background — you can close this window or
+          leave the page. We&apos;ll notify you the moment it&apos;s ready.
+        </p>
+      </div>
+      <Button variant="secondary" size="sm" className="mt-4" onClick={onClose}>
+        Close &amp; continue in background
+      </Button>
+    </Centered>
+  );
+}
+
+function SelectStep({
+  requirements,
+  initialSelected,
+  busy,
+  onSubmit,
+  onCancelReselect,
+}: {
+  requirements: Requirement[];
+  initialSelected?: string[];
+  busy?: boolean;
+  onSubmit: (keywords: string[], mode: "quick" | "full") => void;
+  onCancelReselect?: () => void;
+}) {
+  const missing = requirements.filter((r) => !r.alreadyPresent);
+  const present = requirements.filter((r) => r.alreadyPresent);
+
+  const [selected, setSelected] = useState<Set<string>>(
+    () =>
+      new Set(
+        initialSelected ??
+          missing
+            .filter((r) => r.importance !== "nice_to_have")
+            .map((r) => r.keyword)
+      )
+  );
+
+  const toggle = (kw: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(kw)) next.delete(kw);
+      else next.add(kw);
+      return next;
+    });
+
+  return (
+    <>
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <p className="text-sm text-muted">
+          Pick what to weave in. We only add what your experience can truthfully
+          support — nothing is invented.
+        </p>
+
+        {missing.length > 0 && (
+          <>
+            <div className="mt-5 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-fg">
+                Missing from your resume
+              </h3>
+              <button
+                onClick={() =>
+                  setSelected(
+                    selected.size === missing.length
+                      ? new Set()
+                      : new Set(missing.map((r) => r.keyword))
+                  )
+                }
+                className="text-xs font-medium text-brand-500 hover:text-brand-400"
+              >
+                {selected.size === missing.length ? "Clear all" : "Select all"}
+              </button>
+            </div>
+            <div className="mt-2.5 space-y-2">
+              {missing.map((r) => {
+                const on = selected.has(r.keyword);
+                return (
+                  <button
+                    key={r.keyword}
+                    onClick={() => toggle(r.keyword)}
+                    className={cn(
+                      "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors",
+                      on
+                        ? "border-brand-500/50 bg-brand-500/8"
+                        : "border-line hover:border-line-strong hover:bg-raised/50"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-colors",
+                        on ? "border-brand-500 bg-brand-500" : "border-line-strong"
+                      )}
+                    >
+                      {on && <Check className="h-3 w-3 text-white" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-fg">{r.keyword}</span>
+                        <Badge variant={importanceVariant[r.importance]}>
+                          {importanceLabel[r.importance]}
+                        </Badge>
+                      </span>
+                      <span className="mt-0.5 block text-xs text-subtle">
+                        {r.rationale}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {present.length > 0 && (
+          <>
+            <h3 className="mt-6 text-sm font-semibold text-fg">Already covered</h3>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {present.map((r) => (
+                <Badge key={r.keyword} variant="success">
+                  <Check className="h-3 w-3" /> {r.keyword}
+                </Badge>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="border-t border-line px-5 py-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-medium text-subtle">
+            {selected.size} selected · choose how much to rewrite
+          </p>
+          {onCancelReselect && (
+            <button
+              onClick={onCancelReselect}
+              className="text-xs font-medium text-brand-500 hover:text-brand-400"
+            >
+              Back to result
+            </button>
+          )}
+        </div>
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <button
+            disabled={busy}
+            onClick={() => onSubmit([...selected], "quick")}
+            className="group rounded-xl border border-line p-3.5 text-left transition-colors hover:border-brand-500/50 hover:bg-raised/50 disabled:opacity-50"
+          >
+            <span className="flex items-center gap-2 font-medium text-fg">
+              <Zap className="h-4 w-4 text-accent-500" /> Quick edit
+            </span>
+            <span className="mt-1 block text-xs text-subtle">
+              Keeps your wording. Slots keywords in where they fit.
+            </span>
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => onSubmit([...selected], "full")}
+            className="group rounded-xl border border-brand-500/40 bg-brand-500/8 p-3.5 text-left transition-colors hover:border-brand-500/70 disabled:opacity-50"
+          >
+            <span className="flex items-center gap-2 font-medium text-fg">
+              <Sparkles className="h-4 w-4 text-brand-500" /> Full rewrite
+            </span>
+            <span className="mt-1 block text-xs text-subtle">
+              Rewrites bullets and reorders for maximum impact.
+            </span>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+interface DoneTailorJob {
+  originalText?: string;
+  optimizedText?: string;
+  changesSummary?: string[];
+  keywordsAdded?: string[];
+  scoreBefore?: number;
+  scoreAfter?: number;
+  pdfUrl: string | null;
+  fileName?: string;
+}
+
+function ResultView({
+  tailorJob,
+  applyLink,
+  onAdjust,
+  onRestart,
+}: {
+  tailorJob: DoneTailorJob;
+  applyLink?: string;
+  onAdjust: () => void;
+  onRestart: () => void;
+}) {
+  const [showDiff, setShowDiff] = useState(true);
+
+  const original = tailorJob.originalText ?? "";
+  const optimized = tailorJob.optimizedText ?? "";
+  const lines: DiffLine[] = diffLines(original, optimized);
   const stats = diffStats(lines);
-  const delta = result.scoreAfter - result.scoreBefore;
+  const before = tailorJob.scoreBefore ?? 0;
+  const after = tailorJob.scoreAfter ?? 0;
+  const delta = after - before;
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3">
         <span className="flex items-center gap-2 text-sm">
           <span className="text-subtle">ATS</span>
-          <span className="font-semibold text-muted">{result.scoreBefore}%</span>
+          <span className="font-semibold text-muted">{before}%</span>
           <ArrowRight className="h-3.5 w-3.5 text-subtle" />
-          <span className="font-bold text-emerald-500">{result.scoreAfter}%</span>
-          {delta > 0 && (
-            <Badge variant="success">+{delta}</Badge>
-          )}
+          <span className="font-bold text-emerald-500">{after}%</span>
+          {delta > 0 && <Badge variant="success">+{delta}</Badge>}
         </span>
         <span className="text-xs text-subtle">
           <span className="text-emerald-500">+{stats.added}</span> /{" "}
@@ -386,13 +483,13 @@ function ResultView({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-        {result.keywordsAdded.length > 0 && (
+        {(tailorJob.keywordsAdded?.length ?? 0) > 0 && (
           <div className="mb-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
               Keywords added
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {result.keywordsAdded.map((k) => (
+              {tailorJob.keywordsAdded!.map((k) => (
                 <Badge key={k} variant="brand">
                   {k}
                 </Badge>
@@ -420,25 +517,25 @@ function ResultView({
                     {l.op === "added" ? "+" : l.op === "removed" ? "−" : ""}
                   </span>
                   <span className="whitespace-pre-wrap break-words">
-                    {l.text || " "}
+                    {l.text || " "}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
             <pre className="whitespace-pre-wrap px-4 py-3 font-mono text-xs leading-relaxed text-muted">
-              {result.optimizedText}
+              {optimized}
             </pre>
           )}
         </div>
 
-        {result.changesSummary.length > 0 && (
+        {(tailorJob.changesSummary?.length ?? 0) > 0 && (
           <div className="mt-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">
               What changed
             </p>
             <ul className="space-y-1.5">
-              {result.changesSummary.map((c, i) => (
+              {tailorJob.changesSummary!.map((c, i) => (
                 <li key={i} className="flex gap-2 text-sm text-muted">
                   <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-500" />
                   {c}
@@ -450,14 +547,17 @@ function ResultView({
       </div>
 
       <div className="flex flex-wrap gap-2 border-t border-line px-5 py-4">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" /> Back
+        <Button variant="ghost" size="sm" onClick={onAdjust}>
+          <ArrowLeft className="h-4 w-4" /> Adjust
         </Button>
-        {result.pdfUrl && (
+        <Button variant="ghost" size="sm" onClick={onRestart} title="Start over">
+          <RotateCcw className="h-4 w-4" />
+        </Button>
+        {tailorJob.pdfUrl && (
           <Button asChild variant="secondary" className="flex-1">
             <a
-              href={result.pdfUrl}
-              download={result.fileName}
+              href={tailorJob.pdfUrl}
+              download={tailorJob.fileName}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -470,11 +570,6 @@ function ResultView({
             <a href={applyLink} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4" /> Apply now
             </a>
-          </Button>
-        )}
-        {!applyLink && (
-          <Button variant="brand" className="flex-1" disabled>
-            <FileText className="h-4 w-4" /> No apply link
           </Button>
         )}
       </div>

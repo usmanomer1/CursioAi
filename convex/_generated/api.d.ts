@@ -32,11 +32,13 @@ import type * as lib_pdf_resumePdf from "../lib/pdf/resumePdf.js";
 import type * as lib_pdf_trimForOnePage from "../lib/pdf/trimForOnePage.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as migrations from "../migrations.js";
+import type * as notifications from "../notifications.js";
 import type * as resume from "../resume.js";
 import type * as resumeActions from "../resumeActions.js";
 import type * as resumeInternal from "../resumeInternal.js";
 import type * as resumeStorage from "../resumeStorage.js";
 import type * as seedDemo from "../seedDemo.js";
+import type * as tailor from "../tailor.js";
 import type * as users from "../users.js";
 import type * as usersInternal from "../usersInternal.js";
 
@@ -71,11 +73,13 @@ declare const fullApi: ApiFromModules<{
   "lib/pdf/trimForOnePage": typeof lib_pdf_trimForOnePage;
   "lib/validators": typeof lib_validators;
   migrations: typeof migrations;
+  notifications: typeof notifications;
   resume: typeof resume;
   resumeActions: typeof resumeActions;
   resumeInternal: typeof resumeInternal;
   resumeStorage: typeof resumeStorage;
   seedDemo: typeof seedDemo;
+  tailor: typeof tailor;
   users: typeof users;
   usersInternal: typeof usersInternal;
 }>;

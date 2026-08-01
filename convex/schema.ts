@@ -1,6 +1,10 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { cachedJobDataValidator, jobContextValidator } from "./lib/validators";
+import {
+  cachedJobDataValidator,
+  jobContextValidator,
+  tailorRequirementValidator,
+} from "./lib/validators";
 
 const cachedJobData = cachedJobDataValidator;
 
@@ -225,6 +229,60 @@ export default defineSchema({
   })
     .index("by_thread", ["agentThreadId", "createdAt"])
     .index("by_user_job", ["userId", "jobId", "createdAt"]),
+
+  // Persistent resume-tailoring jobs: the whole flow (analysis → selection →
+  // generation → result) survives closing the dialog or the tab, because the
+  // work runs in scheduled server actions keyed off this record.
+  tailorJobs: defineTable({
+    userId: v.id("users"),
+    jobId: v.string(),
+    jobTitle: v.string(),
+    companyName: v.string(),
+    jobDescription: v.string(),
+    jobUrl: v.optional(v.string()),
+    status: v.union(
+      v.literal("analyzing"),
+      v.literal("awaiting_selection"),
+      v.literal("generating"),
+      v.literal("done"),
+      v.literal("error")
+    ),
+    requirements: v.optional(v.array(tailorRequirementValidator)),
+    selectedKeywords: v.optional(v.array(v.string())),
+    mode: v.optional(v.union(v.literal("quick"), v.literal("full"))),
+    generationId: v.optional(v.id("resumeGenerations")),
+    originalText: v.optional(v.string()),
+    optimizedText: v.optional(v.string()),
+    changesSummary: v.optional(v.array(v.string())),
+    keywordsAdded: v.optional(v.array(v.string())),
+    scoreBefore: v.optional(v.number()),
+    scoreAfter: v.optional(v.number()),
+    storageId: v.optional(v.id("_storage")),
+    fileName: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId", "updatedAt"])
+    .index("by_user_job", ["userId", "jobId"]),
+
+  // In-app notification inbox (bell in the shell + live toasts).
+  notifications: defineTable({
+    userId: v.id("users"),
+    kind: v.union(
+      v.literal("tailor_ready_for_review"),
+      v.literal("tailor_done"),
+      v.literal("tailor_error")
+    ),
+    title: v.string(),
+    body: v.string(),
+    jobId: v.optional(v.string()),
+    tailorJobId: v.optional(v.id("tailorJobs")),
+    read: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId", "createdAt"])
+    .index("by_user_unread", ["userId", "read"]),
 
   usageRecords: defineTable({
     userId: v.id("users"),
