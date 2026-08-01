@@ -79,6 +79,7 @@ export default function JobsPage() {
   const me = useQuery(api.users.getMe);
   const likedJobs = useQuery(api.jobs.getLikedJobs);
   const applications = useQuery(api.applications.list);
+  const persisted = useQuery(api.jobs.getLatestSearch);
 
   const createSession = useMutation(api.jobs.createSearchSession);
   const searchAndMatch = useAction(api.actions.searchAndMatchJobs);
@@ -86,10 +87,11 @@ export default function JobsPage() {
   const unlikeJob = useMutation(api.jobs.unlikeJob);
   const createApplication = useMutation(api.applications.create);
 
-  const [query, setQuery] = useState("");
-  const [location, setLocation] = useState("");
-  const [jobs, setJobs] = useState<JobResult[]>([]);
-  const [selectedJob, setSelectedJob] = useState<JobResult | null>(null);
+  const [queryInput, setQueryInput] = useState<string | null>(null);
+  const [locationInput, setLocationInput] = useState<string | null>(null);
+  // null = nothing searched in this tab yet, so show the persisted results.
+  const [localJobs, setLocalJobs] = useState<JobResult[] | null>(null);
+  const [pickedJob, setPickedJob] = useState<JobResult | null>(null);
   const [chatJob, setChatJob] = useState<JobResult | null>(null);
   const [tailorJob, setTailorJob] = useState<JobResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -102,6 +104,17 @@ export default function JobsPage() {
   const [datePosted, setDatePosted] = useState("month");
   const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
   const [experienceLevel, setExperienceLevel] = useState<string[]>([]);
+
+  // Fall back to the last saved search until the user runs a new one.
+  const jobs: JobResult[] =
+    localJobs ?? ((persisted?.jobs as JobResult[] | undefined) ?? []);
+  const query = queryInput ?? persisted?.query ?? "";
+  const location = locationInput ?? persisted?.location ?? "";
+  const setQuery = (v: string) => setQueryInput(v);
+  const setLocation = (v: string) => setLocationInput(v);
+  const hydrating = persisted === undefined && localJobs === null;
+  const selectedJob = pickedJob ?? jobs[0] ?? null;
+  const setSelectedJob = (j: JobResult | null) => setPickedJob(j);
 
   const resumeText = me?.primaryResume?.resumeText ?? "";
   const hasResume = resumeText.length >= 50;
@@ -126,7 +139,7 @@ export default function JobsPage() {
 
     setLoading(true);
     setSearched(true);
-    setJobs([]);
+    setLocalJobs([]);
     setSelectedJob(null);
     setShowFullDesc(false);
 
@@ -156,7 +169,7 @@ export default function JobsPage() {
       });
 
       const found = result.jobs as JobResult[];
-      setJobs(found);
+      setLocalJobs(found);
       if (found.length > 0) setSelectedJob(found[0]);
       toast.success(`Found ${result.totalFound} jobs`);
     } catch (error) {
@@ -359,7 +372,7 @@ export default function JobsPage() {
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {loading && (
+            {(loading || hydrating) && (
               <div className="space-y-2 p-4">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-20" />
@@ -367,7 +380,7 @@ export default function JobsPage() {
               </div>
             )}
 
-            {!loading && jobs.length === 0 && (
+            {!loading && !hydrating && jobs.length === 0 && (
               <div className="p-6">
                 <EmptyState
                   icon={Search}
@@ -382,6 +395,7 @@ export default function JobsPage() {
             )}
 
             {!loading &&
+              !hydrating &&
               jobs.map((job) => (
                 <button
                   key={job.job_id}

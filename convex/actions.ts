@@ -86,9 +86,14 @@ export const searchAndMatchJobs = action({
         enrichedJobs = await matchJobsWithAI(rawJobs, args.resumeText);
       }
 
-      // Jobs are returned directly to the client and saved on demand via
-      // userJobInteractions when a user likes one — no need to persist the
-      // full result set on every search.
+      // Persist the results so the search survives a page refresh and can be
+      // reopened from the recent-searches list.
+      await ctx.runMutation(internal.jobs.saveSessionResults, {
+        sessionId: args.sessionId,
+        userId: user._id,
+        jobs: enrichedJobs,
+      });
+
       const scoredCount = enrichedJobs.filter(
         (j) => j.match_score !== undefined
       ).length;

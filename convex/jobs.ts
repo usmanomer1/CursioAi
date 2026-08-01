@@ -63,6 +63,96 @@ export const updateSessionStatus = internalMutation({
   },
 });
 
+/**
+ * Persist the enriched results of a search so they survive a page refresh.
+ * The full enriched job (including match fields) already lives in `jobData`,
+ * so that's the single source of truth; `batchIndex` carries the rank.
+ */
+export const saveSessionResults = internalMutation({
+  args: {
+    sessionId: v.id("jobSearchSessions"),
+    userId: v.id("users"),
+    jobs: v.array(v.any()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    for (let i = 0; i < args.jobs.length; i++) {
+      const job = args.jobs[i];
+      await ctx.db.insert("jobs", {
+        sessionId: args.sessionId,
+        userId: args.userId,
+        jobId: String(job.job_id ?? `idx_${i}`),
+        jobData: job,
+        matchScore: job.match_score,
+        matchLabel: job.match_label,
+        batchIndex: i,
+        createdAt: now,
+      });
+    }
+    return null;
+  },
+});
+
+/** Most recent search plus its results — used to rehydrate the page. */
+export const getLatestSearch = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getOptionalUser(ctx);
+    if (!user) return null;
+
+    const session = await ctx.db
+      .query("jobSearchSessions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .first();
+    if (!session) return null;
+
+    const rows = await ctx.db
+      .query("jobs")
+      .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+      .take(100);
+
+    return {
+      sessionId: session._id,
+      query: session.query,
+      location: session.location ?? "",
+      filters: session.filters ?? null,
+      status: session.status,
+      createdAt: session.createdAt,
+      jobs: rows
+        .sort((a, b) => a.batchIndex - b.batchIndex)
+        .map((r) => r.jobData),
+    };
+  },
+});
+
+/** Results for a specific past search (used by the recent-searches list). */
+export const getSessionJobs = query({
+  args: { sessionId: v.id("jobSearchSessions") },
+  handler: async (ctx, args) => {
+    const user = await getOptionalUser(ctx);
+    if (!user) return null;
+
+    const session = await ctx.db.get(args.sessionId);
+    if (!session || session.userId !== user._id) return null;
+
+    const rows = await ctx.db
+      .query("jobs")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .take(100);
+
+    return {
+      sessionId: session._id,
+      query: session.query,
+      location: session.location ?? "",
+      jobs: rows
+        .sort((a, b) => a.batchIndex - b.batchIndex)
+        .map((r) => r.jobData),
+    };
+  },
+});
+
 export const getRecentSessions = query({
   args: {},
   handler: async (ctx) => {
