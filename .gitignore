@@ -33,6 +33,16 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Supabase migration exports — contain PII, never commit
+scripts/export-*.json
+
+# local agent tooling / editor config (not app code)
+.claude/
+.agents/
+skills-lock.json
+.mcp.json
+.convex/
+
 # vercel
 .vercel
 
