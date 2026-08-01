@@ -1,27 +1,29 @@
 "use client";
 
 import { PricingTable } from "@clerk/nextjs";
-import { Check, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { ShieldCheck, Sparkles, Star, Zap } from "lucide-react";
 import { UserSync } from "@/components/user-sync";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useClerkAppearance } from "@/components/clerk-appearance";
-
-const HIGHLIGHTS = [
-  "Live jobs scored against your resume",
-  "A tailored one-page resume per role",
-  "AI coach with the job posting loaded",
-  "Application tracker end to end",
-];
+import {
+  TESTIMONIALS,
+  TestimonialCard,
+  TestimonialsMarquee,
+} from "@/components/testimonials";
 
 export default function PaywallPage() {
   const appearance = useClerkAppearance();
+
+  // Two counter-scrolling columns for the desktop layout.
+  const colA = TESTIMONIALS.filter((_, i) => i % 2 === 0);
+  const colB = TESTIMONIALS.filter((_, i) => i % 2 === 1);
 
   return (
     <>
       <UserSync />
       <div className="relative min-h-screen overflow-hidden">
-        <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_50%_0%,black,transparent_60%)]" />
+        <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_50%_0%,black,transparent_55%)]" />
         <div
           className="pointer-events-none absolute left-1/2 top-[-14rem] h-[26rem] w-[40rem] -translate-x-1/2 rounded-full opacity-20 blur-[110px]"
           style={{
@@ -34,55 +36,77 @@ export default function PaywallPage() {
           <ThemeToggle />
         </div>
 
-        <div className="relative mx-auto max-w-5xl px-6 py-9">
-          <div className="mb-6 flex justify-center">
-            <Logo id="paywall" />
-          </div>
-
-          <div className="mb-7 text-center">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-brand-500">
-              Cursio Pro
-            </p>
-            <h1 className="text-balance text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+        <div className="relative mx-auto max-w-6xl px-6 py-12">
+          {/* Header */}
+          <div className="mb-10 text-center">
+            <div className="mb-6 flex justify-center">
+              <Logo id="paywall" />
+            </div>
+            <h1 className="text-balance text-4xl font-bold tracking-tight text-fg sm:text-5xl">
               Land your next role faster
             </h1>
-            <p className="mx-auto mt-2.5 max-w-lg text-sm text-muted">
-              Everything you need to find the right jobs, tailor your resume for
-              each one, and track the whole search.
-            </p>
+            <div className="mt-3 flex items-center justify-center gap-2 text-sm text-muted">
+              <span className="flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className="h-4 w-4 fill-amber-400 text-amber-400"
+                  />
+                ))}
+              </span>
+              Loved by candidates at top companies
+            </div>
           </div>
 
-          {/* Pricing beside the value props so both sit above the fold */}
-          <div className="grid items-start gap-8 md:grid-cols-[1fr_auto] md:gap-12">
-            <ul className="space-y-2.5 md:pt-2">
-              {HIGHLIGHTS.map((h) => (
-                <li key={h} className="flex items-start gap-2.5 text-sm text-muted">
-                  <span className="mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/12">
-                    <Check className="h-3 w-3 text-emerald-500" />
-                  </span>
-                  {h}
-                </li>
-              ))}
+          {/* Reviews beside the price — symmetric two-column layout */}
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_24rem]">
+            {/* Desktop: two vertical counter-scrolling columns */}
+            <div className="hidden h-[560px] gap-4 overflow-hidden lg:flex [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)]">
+              <div
+                className="flex flex-col gap-4 hover:[animation-play-state:paused]"
+                style={{ animation: "marquee-y 36s linear infinite" }}
+              >
+                {[...colA, ...colA].map((t, i) => (
+                  <TestimonialCard key={i} t={t} index={i} className="w-full" />
+                ))}
+              </div>
+              <div
+                className="flex flex-col gap-4 hover:[animation-play-state:paused]"
+                style={{ animation: "marquee-y 36s linear infinite reverse" }}
+              >
+                {[...colB, ...colB].map((t, i) => (
+                  <TestimonialCard
+                    key={i}
+                    t={t}
+                    index={i + 1}
+                    className="w-full"
+                  />
+                ))}
+              </div>
+            </div>
 
-              <li className="!mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-line pt-4 text-xs text-subtle">
+            {/* The plan */}
+            <div className="mx-auto w-full max-w-sm lg:mx-0">
+              <PricingTable appearance={appearance} />
+              <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-subtle">
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Secure
-                  checkout
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                  Secure checkout
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Zap className="h-3.5 w-3.5 text-emerald-500" /> Cancel anytime
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-500" /> Powered by
-                  Clerk Billing
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-500" /> Clerk
+                  Billing
                 </span>
-              </li>
-            </ul>
-
-            {/* Single-plan instance: cap the width so the card doesn't stretch. */}
-            <div className="w-full md:w-[22rem]">
-              <PricingTable appearance={appearance} />
+              </div>
             </div>
+          </div>
+
+          {/* Mobile: horizontal carousel below the plan */}
+          <div className="mt-12 lg:hidden">
+            <TestimonialsMarquee />
           </div>
         </div>
       </div>

@@ -7,13 +7,16 @@ import {
   FileText,
   MessageSquare,
   ShieldCheck,
-  Sparkles,
   Target,
   Wand2,
 } from "lucide-react";
 import { Logo, LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  CompanyMarquee,
+  TestimonialsMarquee,
+} from "@/components/testimonials";
 
 const features = [
   {
@@ -72,16 +75,8 @@ export default async function HomePage() {
         />
 
         <div className="relative mx-auto max-w-3xl px-6 pb-20 pt-20 text-center sm:pt-28">
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-line bg-surface/80 px-3.5 py-1.5 text-sm text-muted shadow-sm backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-brand-500" />
-            AI job matching, tailoring &amp; coaching
-          </div>
-
-          <h1 className="text-balance text-5xl font-bold leading-[1.05] tracking-tight text-fg sm:text-7xl">
-            Stop rewriting your resume{" "}
-            <span className="bg-gradient-to-r from-brand-600 via-brand-500 to-accent-500 bg-clip-text text-transparent dark:from-brand-400 dark:via-brand-300 dark:to-accent-400">
-              for every job
-            </span>
+          <h1 className="text-balance text-5xl font-bold leading-[1.06] tracking-tight text-fg sm:text-7xl">
+            Stop rewriting your resume for every job.
           </h1>
 
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted">
@@ -112,6 +107,11 @@ export default async function HomePage() {
               <Check className="h-3.5 w-3.5 text-emerald-500" /> Cancel anytime
             </span>
           </div>
+        </div>
+
+        {/* Where users landed */}
+        <div className="relative mx-auto max-w-4xl px-6 pb-16">
+          <CompanyMarquee label="Cursio users have landed roles at" />
         </div>
 
         {/* Product peek */}
@@ -213,6 +213,20 @@ export default async function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Reviews */}
+      <section className="mx-auto max-w-6xl px-6 pb-20">
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-fg">
+            The job search, minus the grind
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-muted">
+            From first search to signed offer — here&apos;s how it&apos;s going
+            for people using Cursio.
+          </p>
+        </div>
+        <TestimonialsMarquee />
       </section>
 
       {/* CTA */}
