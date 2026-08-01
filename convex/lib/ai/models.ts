@@ -5,4 +5,4 @@
  * Override per-deployment with the OPENROUTER_MODEL env var.
  */
 export const DEFAULT_MODEL =
-  process.env.OPENROUTER_MODEL ?? "google/gemini-2.5-flash";
+  process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-v4-flash-0731";

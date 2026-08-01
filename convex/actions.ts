@@ -154,7 +154,10 @@ async function matchJobsWithAI(
           return {
             jobId: job.job_id,
             score,
-            matchLabel: raw.matchLabel || calculateMatchLabel(score),
+            // Derive the label from the score rather than trusting the model's
+            // wording — different models return different casing ("Strong
+            // Match" vs "STRONG MATCH"), which leaks into the UI badge.
+            matchLabel: calculateMatchLabel(score),
             matchReasons: raw.matchReasons ?? [],
             missingSkills: raw.missingSkills ?? [],
             keyStrengths: raw.keyStrengths ?? [],
