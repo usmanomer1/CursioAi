@@ -20,6 +20,14 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationsBell } from "@/components/notifications-bell";
 
+// Keep the account popover inside the viewport on phones (its default width
+// is wider than a phone screen minus margins).
+const userButtonAppearance = {
+  elements: {
+    userButtonPopoverCard: "max-w-[calc(100vw-1.5rem)]",
+  },
+} as const;
+
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/jobs", label: "Job Search", icon: Search },
@@ -68,7 +76,14 @@ function UserCard() {
   const { user } = useUser();
   return (
     <div className="mt-4 flex items-center gap-3 rounded-xl border border-line bg-surface p-2.5">
-      <UserButton appearance={{ elements: { avatarBox: "h-8 w-8" } }} />
+      <UserButton
+        appearance={{
+          elements: {
+            ...userButtonAppearance.elements,
+            avatarBox: "h-8 w-8",
+          },
+        }}
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-fg">
           {user?.fullName ?? "Your account"}
@@ -106,7 +121,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-1.5">
           <NotificationsBell />
           <ThemeToggle />
-          <UserButton />
+          <UserButton appearance={userButtonAppearance} />
           <button
             onClick={() => setOpen(true)}
             aria-label="Open menu"

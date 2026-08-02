@@ -187,6 +187,14 @@ body {
   border-radius: 4px;
 }
 
+/* Clerk moves focus into its popovers when they open, and Safari flags that
+   programmatic focus as :focus-visible — the global outline then draws a blue
+   ring around the whole card. Clerk ships its own focus styles; stand down. */
+[class^="cl-"]:focus-visible,
+[class*=" cl-"]:focus-visible {
+  outline: none;
+}
+
 ::selection {
   background-color: color-mix(in oklab, var(--color-brand-500) 35%, transparent);
   color: var(--fg);
