@@ -382,7 +382,7 @@ function SelectStep({
         )}
       </div>
 
-      <div className="border-t border-line px-5 py-4">
+      <div className="border-t border-line px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-xs font-medium text-subtle">
             {selected.size} selected · choose how much to rewrite
@@ -573,7 +573,7 @@ function ResultView({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 border-t border-line px-5 py-3.5">
+      <div className="flex flex-wrap gap-2 border-t border-line px-5 py-3.5 pb-[calc(0.875rem+env(safe-area-inset-bottom))] sm:pb-3.5">
         <Button variant="ghost" size="sm" onClick={onAdjust}>
           <ArrowLeft className="h-4 w-4" /> Adjust
         </Button>

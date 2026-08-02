@@ -210,13 +210,13 @@ function ChatThread({
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="border-t border-line p-3">
+        <div className="border-t border-line p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3">
           <div className="flex gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about this job…"
-              className="flex-1 rounded-xl border border-line-strong bg-raised px-4 py-2.5 text-sm text-fg placeholder:text-subtle focus:border-brand-500 focus:outline-none"
+              className="flex-1 rounded-xl border border-line-strong bg-raised px-4 py-2.5 text-base sm:text-sm text-fg placeholder:text-subtle focus:border-brand-500 focus:outline-none"
               onKeyDown={(e) => e.key === "Enter" && void send(input)}
               disabled={loading}
             />

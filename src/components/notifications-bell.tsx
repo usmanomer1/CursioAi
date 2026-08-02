@@ -113,9 +113,12 @@ export function NotificationsBell({ direction = "down" }: { direction?: "up" | "
             // "up" = sidebar footer: the bell sits at the bottom-left of the
             // viewport, so anchoring to the bell pushes the panel off-screen.
             // Pin it to the viewport corner instead, floating over content.
+            // "down" on phones has the same problem in mirror image (bell near
+            // the right edge, panel wider than the space left of it), so pin
+            // to the viewport below the top bar until sm.
             direction === "up"
               ? "fixed bottom-20 left-4"
-              : "absolute right-0 top-11"
+              : "fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-11"
           )}
         >
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">

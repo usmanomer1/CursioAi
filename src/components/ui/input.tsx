@@ -1,8 +1,10 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+// text-base below sm: iOS Safari auto-zooms the page when a focused field's
+// font-size is under 16px, which wrecks the layout on phones.
 const fieldBase =
-  "w-full rounded-lg border border-line-strong bg-surface text-sm text-fg placeholder:text-subtle transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40 disabled:opacity-50";
+  "w-full rounded-lg border border-line-strong bg-surface text-base sm:text-sm text-fg placeholder:text-subtle transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/40 disabled:opacity-50";
 
 export const Input = React.forwardRef<
   HTMLInputElement,

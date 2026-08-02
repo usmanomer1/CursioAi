@@ -30,6 +30,7 @@ export function ResizableSplit({
   max = 68,
   defaultPct = 46,
   className,
+  rightClassName,
 }: {
   left: React.ReactNode;
   right: React.ReactNode;
@@ -37,6 +38,7 @@ export function ResizableSplit({
   max?: number;
   defaultPct?: number;
   className?: string;
+  rightClassName?: string;
 }) {
   const initial = useStoredPct(defaultPct, min, max);
   const [override, setOverride] = useState<number | null>(null);
@@ -96,8 +98,10 @@ export function ResizableSplit({
       ref={containerRef}
       className={cn("flex min-h-0 flex-col lg:flex-row", className)}
     >
+      {/* flex-1 below lg so a lone pane fills the height; the .split-pane
+          rule (unlayered, lg-only) overrides it with the dragged width. */}
       <div
-        className="split-pane flex min-h-0 w-full flex-col"
+        className="split-pane flex min-h-0 w-full flex-1 flex-col"
         style={{ "--split": `${pct}%` } as React.CSSProperties}
       >
         {left}
@@ -125,7 +129,9 @@ export function ResizableSplit({
         <span className="pointer-events-none absolute h-10 w-1 rounded-full bg-line-strong transition-colors group-hover:bg-brand-500" />
       </div>
 
-      <div className="flex min-h-0 w-full flex-col lg:flex-1">{right}</div>
+      <div className={cn("flex min-h-0 w-full flex-col lg:flex-1", rightClassName)}>
+        {right}
+      </div>
     </div>
   );
 }

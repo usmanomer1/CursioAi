@@ -15,6 +15,7 @@ import {
   SlidersHorizontal,
   Building2,
   Briefcase,
+  ChevronLeft,
   DollarSign,
   Clock,
   AlertCircle,
@@ -199,7 +200,6 @@ function JobsPageInner() {
 
       const found = result.jobs as JobResult[];
       setLocalJobs(found);
-      if (found.length > 0) setSelectedJob(found[0]);
       toast.success(`Found ${result.totalFound} jobs`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Search failed");
@@ -273,8 +273,16 @@ function JobsPageInner() {
 
   return (
     <>
+      {/* Below lg the list owns the screen; tapping a job floats the detail
+          pane over it as a full-screen overlay with a back button, instead of
+          squeezing both panes into one column. */}
       <ResizableSplit
         className="h-[calc(100vh-3.5rem)] md:h-screen"
+        rightClassName={
+          pickedJob
+            ? "fixed inset-0 z-50 bg-canvas pt-[env(safe-area-inset-top)] lg:static lg:inset-auto lg:z-auto lg:bg-transparent lg:pt-0"
+            : "hidden lg:flex"
+        }
         left={
           /* Search + list */
           <div className="flex min-h-0 flex-1 flex-col">
@@ -468,6 +476,14 @@ function JobsPageInner() {
           <div className="flex max-h-full w-full min-h-0 flex-col">
           {selectedJob ? (
             <>
+              <div className="flex items-center border-b border-line px-2 py-1.5 lg:hidden">
+                <button
+                  onClick={() => setPickedJob(null)}
+                  className="flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium text-muted hover:bg-raised hover:text-fg"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Back to results
+                </button>
+              </div>
               <div className="min-h-0 flex-1 overflow-y-auto p-6">
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -570,7 +586,7 @@ function JobsPageInner() {
                 </div>
               </div>
 
-              <div className="space-y-2 border-t border-line p-4">
+              <div className="space-y-2 border-t border-line p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:pb-4">
                 {/* Primary action — the differentiating feature */}
                 <Button
                   variant="brand"
