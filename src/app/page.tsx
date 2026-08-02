@@ -7,12 +7,12 @@ import {
   CheckCircle,
   Crosshair,
   FileArrowDown,
+  FileArrowUp,
   Lightning,
   MagicWand,
   MagnifyingGlass,
   PaperPlaneTilt,
   ShieldCheck,
-  UploadSimple,
 } from "@phosphor-icons/react/dist/ssr";
 import { Logo, LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ const STATS = [
 
 const STEPS = [
   {
-    icon: UploadSimple,
+    icon: FileArrowUp,
     n: "01",
     title: "Upload your resume",
     desc: "We parse it once and keep it ready.",
