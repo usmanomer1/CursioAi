@@ -1,18 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { ArrowRight } from "lucide-react";
 import {
   ChatsCircle,
-  CheckCircle,
   Crosshair,
-  FileArrowDown,
   FileArrowUp,
-  Lightning,
   MagicWand,
   MagnifyingGlass,
   PaperPlaneTilt,
-  ShieldCheck,
 } from "@phosphor-icons/react/dist/ssr";
 import { Logo, LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -22,49 +19,42 @@ import {
   TestimonialsMarquee,
 } from "@/components/testimonials";
 
-const FEATURES = [
+const GETS = [
   {
     icon: Crosshair,
-    title: "Matched, not scraped",
-    desc: "Every listing is scored 0–100 against your actual resume, with the reasons and the gaps spelled out.",
+    title: "Know which jobs are worth it",
+    desc: "Every opening scored against your real experience, so you stop burning nights on roles that were never going to call.",
   },
   {
     icon: MagicWand,
-    title: "A resume per job",
-    desc: "Pick the requirements you want addressed, then get a tailored one-page ATS resume — never invented, just sharpened.",
+    title: "A resume built for that one job",
+    desc: "Written from your actual history, in the language that posting is scanning for. Nothing invented, ever.",
   },
   {
     icon: ChatsCircle,
-    title: "A coach that read the posting",
-    desc: "Ask about fit, gaps or interview prep. It already has the job description and your resume loaded.",
+    title: "Someone in your corner",
+    desc: "A coach that already read the job description. Ask it what to say, what to fix, what they'll ask you.",
   },
-];
-
-const STATS = [
-  { value: "800+", label: "job seekers on Cursio" },
-  { value: "0–100", label: "match score on every listing" },
-  { value: "1 page", label: "ATS-clean resume, every time" },
-  { value: "<60s", label: "from posting to tailored PDF" },
 ];
 
 const STEPS = [
   {
     icon: FileArrowUp,
     n: "01",
-    title: "Upload your resume",
-    desc: "We parse it once and keep it ready.",
+    title: "Drop in your resume",
+    desc: "Once. We read it and remember it.",
   },
   {
     icon: MagnifyingGlass,
     n: "02",
-    title: "Search real openings",
-    desc: "Live roles, ranked against your experience.",
+    title: "See what actually fits",
+    desc: "Live openings, ranked against you.",
   },
   {
     icon: PaperPlaneTilt,
     n: "03",
-    title: "Tailor and apply",
-    desc: "One-page resume per role, tracked end to end.",
+    title: "Send the right version",
+    desc: "One page, built for that role, in a minute.",
   },
 ];
 
@@ -89,62 +79,156 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_50%_0%,black,transparent_65%)]" />
-        <div
-          className="pointer-events-none absolute left-1/2 top-[-14rem] h-[32rem] w-[52rem] -translate-x-1/2 rounded-full opacity-25 blur-[110px]"
-          style={{
-            background:
-              "radial-gradient(circle at 35% 40%, var(--color-brand-500), transparent 60%), radial-gradient(circle at 70% 55%, var(--color-accent-500), transparent 62%)",
-          }}
+      {/* ── Hero: dark cinematic band ─────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden bg-[#05070f]">
+        <Image
+          src="/landing/hero-ambient.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="pointer-events-none absolute inset-0 -z-10 object-cover opacity-45"
         />
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#05070f]/70 via-[#05070f]/60 to-[#05070f]" />
 
-        <div className="relative mx-auto max-w-3xl px-6 pb-16 pt-20 text-center sm:pt-28">
-          <h1 className="text-balance text-5xl font-bold leading-[1.06] tracking-tight text-fg sm:text-7xl">
-            Stop rewriting your resume for every job.
+        <div className="relative mx-auto max-w-3xl px-6 pb-24 pt-24 text-center sm:pt-32">
+          <h1 className="text-balance text-5xl font-bold leading-[1.04] tracking-tight text-white sm:text-7xl">
+            Stop applying.
+            <br />
+            Start interviewing.
           </h1>
 
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted">
-            Cursio scores live openings against your experience, then writes a
-            tailored one-page resume for the ones worth chasing — and coaches
-            you through the application.
+          <p className="mx-auto mt-7 max-w-xl text-lg leading-relaxed text-white/70">
+            Employers screen applications with software before a recruiter opens
+            one. Cursio builds you a resume for the specific job you want, so
+            you get past the filter and into the room.
           </p>
 
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild variant="brand" size="lg" className="w-full sm:w-auto">
               <Link href="/sign-up">
-                Start free <ArrowRight className="h-5 w-5" />
+                Get started <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
-            <Button asChild variant="secondary" size="lg" className="w-full sm:w-auto">
+            <Button
+              asChild
+              size="lg"
+              className="w-full border border-white/20 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10 sm:w-auto"
+            >
               <Link href="/sign-in">I have an account</Link>
             </Button>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-subtle">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle weight="fill" className="h-4 w-4 text-emerald-500" />
-              One-page ATS format
-            </span>
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck weight="fill" className="h-4 w-4 text-emerald-500" />
-              Never invents experience
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Lightning weight="fill" className="h-4 w-4 text-emerald-500" />
-              Cancel anytime
-            </span>
-          </div>
+          <p className="mt-8 text-sm text-white/55">
+            Built for the 800+ job seekers already using Cursio
+          </p>
         </div>
+      </section>
 
-        {/* Where users landed */}
-        <div className="relative mx-auto max-w-4xl px-6 pb-16">
+      {/* Where users landed */}
+      <section className="border-b border-line py-14">
+        <div className="mx-auto max-w-4xl px-6">
           <CompanyMarquee label="Cursio users have landed roles at" />
         </div>
+      </section>
 
-        {/* Product peek */}
-        <div className="relative mx-auto max-w-4xl px-6 pb-20">
+      {/* ── The problem ───────────────────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden bg-[#05070f]">
+        <Image
+          src="/landing/the-void.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="pointer-events-none absolute inset-0 -z-10 object-cover opacity-60"
+        />
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-[#05070f] via-[#05070f]/85 to-[#05070f]/40" />
+
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-400">
+              Sound familiar
+            </p>
+            <h2 className="mt-3 text-balance text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
+              Two hundred applications. Four replies.
+            </h2>
+            <div className="mt-6 space-y-4 text-lg leading-relaxed text-white/70">
+              <p>
+                It was never that you weren&apos;t good enough. A keyword filter
+                decided you weren&apos;t a match before a single person read a
+                word you wrote.
+              </p>
+              <p>
+                So you spent your evenings rewriting the same resume twelve
+                different ways, guessing at what each company wanted to hear,
+                and sending it into the dark.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── The outcome ───────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
+              What changes
+            </p>
+            <h2 className="mt-3 text-balance text-4xl font-bold leading-tight tracking-tight text-fg sm:text-5xl">
+              Then one morning, it&apos;s a different email.
+            </h2>
+            <p className="mt-6 text-lg leading-relaxed text-muted">
+              The version of you on paper finally matches the one who shows up
+              in the room. Same experience, same person — just finally legible
+              to the system standing between you and the interview.
+            </p>
+            <div className="mt-8 space-y-3">
+              {[
+                "Your resume reaches a human being",
+                "You interview for jobs you actually want",
+                "You stop rewriting and start preparing",
+              ].map((line) => (
+                <p key={line} className="flex items-center gap-3 text-fg">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                  {line}
+                </p>
+              ))}
+            </div>
+            <Button asChild variant="brand" size="lg" className="mt-9">
+              <Link href="/sign-up">
+                Get started <ArrowRight className="h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="relative overflow-hidden rounded-3xl border border-line shadow-2xl">
+            <Image
+              src="/landing/the-offer.jpg"
+              alt="Walking into a new office on the first morning"
+              width={1024}
+              height={576}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Proof: the product itself ─────────────────────────────────── */}
+      <section className="border-y border-line bg-surface/50 py-24">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+              Here&apos;s what that looks like
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-muted">
+              Real openings, scored against your resume. Pick one, and a
+              tailored version is ready before you finish your coffee.
+            </p>
+          </div>
+
           <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl">
             <div className="flex items-center gap-1.5 border-b border-line px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
@@ -208,53 +292,33 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* What you get — deliberately compact, not the pitch */}
+          <div className="mt-14 grid gap-8 sm:grid-cols-3">
+            {GETS.map(({ icon: Icon, title, desc }) => (
+              <div key={title}>
+                <Icon weight="duotone" className="h-8 w-8 text-brand-500" />
+                <h3 className="mb-1.5 mt-3 font-semibold text-fg">{title}</h3>
+                <p className="text-sm leading-relaxed text-muted">{desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Stats band */}
-      <section className="border-y border-line bg-surface/60">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-x-6 gap-y-8 px-6 py-10 sm:grid-cols-4">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center">
-              <p className="bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-3xl font-bold tabular-nums text-transparent">
-                {s.value}
-              </p>
-              <p className="mt-1.5 text-xs text-subtle">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
+      {/* ── Steps ─────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-20">
         <div className="mb-10 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
-            Why Cursio
-          </p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-fg">
-            Built around your resume, not the job board
+          <h2 className="text-3xl font-bold tracking-tight text-fg">
+            Set up in two minutes
           </h2>
         </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
-            <div
-              key={title}
-              className="group relative overflow-hidden rounded-2xl border border-line bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-xl hover:shadow-brand-500/5"
-            >
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/10 opacity-0 blur-2xl transition-opacity group-hover:opacity-100" />
-              <Icon weight="duotone" className="h-9 w-9 text-brand-500" />
-              <h3 className="mb-2 mt-4 font-semibold text-fg">{title}</h3>
-              <p className="text-sm leading-relaxed text-muted">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Steps */}
-      <section className="mx-auto max-w-5xl px-6 pb-20">
-        <div className="grid gap-8 rounded-3xl border border-line bg-surface p-8 sm:grid-cols-3 sm:p-10">
+        <div className="grid gap-8 sm:grid-cols-3">
           {STEPS.map(({ icon: Icon, n, title, desc }) => (
-            <div key={n}>
+            <div
+              key={n}
+              className="rounded-2xl border border-line bg-surface p-6"
+            >
               <div className="flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500/15 to-accent-500/10 ring-1 ring-brand-500/20">
                   <Icon weight="duotone" className="h-5 w-5 text-brand-500" />
@@ -268,38 +332,43 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Reviews */}
-      <section className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="mb-8 text-center">
+      {/* ── Reviews ───────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-6 pb-24">
+        <div className="mb-10 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-500">
             Results
           </p>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-fg">
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-fg sm:text-4xl">
             The job search, minus the grind
           </h2>
         </div>
         <TestimonialsMarquee />
       </section>
 
-      {/* CTA */}
-      <section className="mx-auto max-w-5xl px-6 pb-20">
-        <div className="relative overflow-hidden rounded-3xl border border-brand-500/25 bg-gradient-to-br from-brand-500/10 via-surface to-accent-500/10 px-6 py-14 text-center">
-          <LogoMark className="mx-auto mb-5 h-11 w-11" id="cta" />
-          <h2 className="text-3xl font-bold tracking-tight text-fg">
-            Your next role is worth a tailored resume
+      {/* ── Final CTA ─────────────────────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden bg-[#05070f]">
+        <Image
+          src="/landing/cta-glow.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="pointer-events-none absolute inset-0 -z-10 object-cover opacity-70"
+        />
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#05070f]/80 via-transparent to-[#05070f]/90" />
+
+        <div className="mx-auto max-w-2xl px-6 py-28 text-center">
+          <LogoMark className="mx-auto mb-6 h-12 w-12" id="cta" />
+          <h2 className="text-balance text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
+            The job you want is already posted.
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-muted">
-            Set it up in under two minutes.
+          <p className="mx-auto mt-5 max-w-md text-lg text-white/70">
+            Go be the candidate they can&apos;t filter out.
           </p>
-          <Button asChild variant="brand" size="lg" className="mt-7">
+          <Button asChild variant="brand" size="lg" className="mt-9">
             <Link href="/sign-up">
               Get started <ArrowRight className="h-5 w-5" />
             </Link>
           </Button>
-          <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-subtle">
-            <FileArrowDown weight="duotone" className="h-4 w-4 text-brand-500" />
-            Download-ready PDFs from day one
-          </p>
         </div>
       </section>
 
