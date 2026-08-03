@@ -81,6 +81,7 @@ export default async function HomePage() {
 
       {/* ── Hero: dark cinematic band ─────────────────────────────────── */}
       <section className="relative isolate overflow-hidden bg-[#05070f]">
+        {/* Still paints first and stands in wherever the video is blocked. */}
         <Image
           src="/landing/hero-ambient.jpg"
           alt=""
@@ -89,6 +90,17 @@ export default async function HomePage() {
           sizes="100vw"
           className="pointer-events-none absolute inset-0 -z-10 object-cover opacity-45"
         />
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="/landing/hero-ambient.jpg"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-45 motion-reduce:hidden"
+        >
+          <source src="/landing/hero-loop.mp4" type="video/mp4" />
+        </video>
         <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#05070f]/70 via-[#05070f]/60 to-[#05070f]" />
 
         <div className="relative mx-auto max-w-3xl px-6 pb-24 pt-24 text-center sm:pt-32">
