@@ -17,12 +17,18 @@ function getHeaders(): Record<string, string> {
   return { "x-api-key": apiKey };
 }
 
+/** Message shown to the user when the upstream provider is unreachable. */
+const PROVIDER_DOWN =
+  "Job search is temporarily unavailable — our jobs provider is having an outage. Please try again in a few minutes.";
+
 async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
   let lastError: Error | undefined;
+  let lastStatus: number | undefined;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const response = await fetch(url, { headers: getHeaders() });
       if (response.status === 429 || response.status >= 500) {
+        lastStatus = response.status;
         const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
         await new Promise((r) => setTimeout(r, delay));
         continue;
@@ -34,7 +40,16 @@ async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
       await new Promise((r) => setTimeout(r, delay));
     }
   }
-  throw lastError ?? new Error("JSearch request failed");
+  // Exhausting retries on 5xx/429 leaves no thrown error behind, so say what
+  // actually happened instead of surfacing an opaque "Server Error".
+  if (lastStatus !== undefined) {
+    throw new Error(
+      lastStatus === 429
+        ? "Job search is rate limited right now. Please try again in a minute."
+        : PROVIDER_DOWN
+    );
+  }
+  throw lastError ?? new Error(PROVIDER_DOWN);
 }
 
 function stripHtml(html: string): string {
@@ -147,7 +162,15 @@ export async function searchJobs(params: SearchParams): Promise<TransformedJob[]
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`JSearch error ${response.status}: ${body}`);
+    // Keep the upstream detail in the logs, but hand the user something they
+    // can act on — a raw status dump reads as a bug in Cursio.
+    console.error(`JSearch ${response.status} for ${url}: ${body.slice(0, 300)}`);
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        "Job search is misconfigured on our side. We've been notified — please try again later."
+      );
+    }
+    throw new Error(PROVIDER_DOWN);
   }
 
   // OpenWebNinja nests results under data.jobs (with a cursor for pagination).
