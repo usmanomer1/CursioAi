@@ -1,5 +1,6 @@
 "use node";
 
+import { resolveCountry } from "./country";
 import type {
   JSearchJob,
   JSearchSearchResponse,
@@ -136,12 +137,18 @@ export async function searchJobs(params: SearchParams): Promise<TransformedJob[]
   // Each page returns up to 10 results and costs one credit; cap at 20 pages.
   const numPages = Math.min(Math.ceil(numJobs / 10), 20);
 
+  // JSearch scopes results by country and defaults to "us", so a Vancouver
+  // search would otherwise return US listings. Infer it from what the user
+  // typed unless the caller passed one explicitly.
+  const country =
+    params.country ?? resolveCountry(params.location) ?? "us";
+
   const searchParams = new URLSearchParams({
     query: params.location
       ? `${params.query} in ${params.location}`
       : params.query,
     num_pages: String(numPages),
-    country: params.country ?? "us",
+    country,
   });
 
   // "all" is the API default — omit it rather than sending it.
